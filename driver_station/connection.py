@@ -32,8 +32,8 @@ class Robot:
     led_int = 0
     flash = False
     
-    # frontL,frontR,backL,backR,turret,enabled(as binary),led(as 0-2),flash(as binary)
-    tx_string = "{:d},{:d},{:d},{:d},{:d},{:b},{:d},{:b}"
+    # frontL,frontR,backL,backR,turret,enabled(as binary int),led(as 0-2),flash(as binary int)
+    tx_string = "{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d}"
     
     
     # starts up serial port
