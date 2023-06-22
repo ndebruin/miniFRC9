@@ -1,53 +1,53 @@
 import serial
 
 class Robot:
-    ser = serial.Serial
-    
-    # receive
-    front_left_rot = 0.0
-    front_right_rot = 0.0
-    back_left_rot = 0.0
-    back_right_rot = 0.0
-    
-    turret_angle = 0.0
-    
-    pitch = 0.0
-    roll = 0.0
-    yaw = 0.0
-    
-    pixel_offset = 0
-    
-    rx_string = ""
-        
-    
-    # transmit    
-    front_left_power = 0
-    front_right_power = 0
-    back_left_power = 0
-    back_right_power = 0
-    
-    turret_power = 0
-    enabled = False
-    led = "Rainbow" # "Purple" or "Yellow"
-    led_int = 0
-    flash = False
-    
-    # frontL,frontR,backL,backR,turret,enabled(as binary int),led(as 0-2),flash(as binary int)
-    tx_string = "{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d}"
-    
-    
+
+
     # starts up serial port
     # likely use will be ("/dev/rfcomm0, 115200")
     # baud rate may change
     # returns 1 if it cannot open the port, 0 otherwise
-    def __init__(self, dev, baud):
-        try: 
-            self.ser = serial.Serial(dev, baud)
+    def __init__(self, dev="/dev/rfcomm0", baud=115200):
+        self.ser = serial.Serial
+        # receive
+        self.front_left_rot = 0.0
+        self.front_right_rot = 0.0
+        self.back_left_rot = 0.0
+        self.back_right_rot = 0.0
+        
+        self.turret_angle = 0.0
+        
+        self.pitch = 0.0
+        self.roll = 0.0
+        self.yaw = 0.0
+        
+        self.pixel_offset = 0
+        
+        self.rx_string = ""
+            
+        
+        # transmit    
+        self.front_left_power = 0
+        self.front_right_power = 0
+        self.back_left_power = 0
+        self.back_right_power = 0
+        
+        self.turret_power = 0
+        self.enabled = False
+        self.led = "Rainbow" # "Purple" or "Yellow"
+        self.led_int = 0
+        self.flash = False
+        
+        # frontL,frontR,backL,backR,turret,enabled(as binary int),led(as 0-2),flash(as binary int)
+        self.tx_string = "{:d},{ :d},{:d},{:d},{:d},{:d},{:d},{:d}"
 
-        except serial.SerialException:
-            return 1 # port cannot be opened
-        else:
-            return 0
+        # try: 
+        #     self.ser = serial.Serial(dev, baud)
+        # except serial.SerialException:
+        #     print("PORT CANNOT BE OPENED")
+        #     return 1 # port cannot be opened
+        # else:
+        #     return 0
     
     
     
@@ -81,8 +81,7 @@ class Robot:
         except serial.SerialException:
             return 1
         else:
-            return 0
-        
+            return 0   
         
         
         
