@@ -1,8 +1,6 @@
 import serial
 
 class Robot:
-
-
     # starts up serial port
     # likely use will be ("/dev/rfcomm0, 115200")
     # baud rate may change

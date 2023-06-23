@@ -3,10 +3,16 @@
 # used as my debug app
 
 import pygame
+import pygame_widgets
+from pygame_widgets.button import Button
+from pygame_widgets.textbox import TextBox
+from pygame_widgets.progressbar import ProgressBar
 import serial
 import flet as ft
+import threading
 
 from time import sleep
+import datetime
 from os import environ
 from connection import Robot
 
@@ -19,28 +25,95 @@ class Main():
     def __init__(self):    
         # robot constants
         self.track_width = 126/2
+
+        pygame.init()
         pygame.joystick.init()
         self.controller = pygame.joystick.Joystick(0)
 
+        self.screen = pygame.display.set_mode((1280, 720))
+        pygame.display.set_caption("Driver Station")
+        self.screen_width = 1280
+        self.screen_height = 720
+
         self.robot = Robot()
-
-        self.startTime = 0
-
         self.standingby = False
-
-        self.initialDisable = True
-
-        self.running = True
-
+        self.running = False
+        self.auton_running = False
         self.field_oriented = True
-
         self.enabled = False
+        self.state = "STANDBY"
+        self.auton_time = 15
+        self.teleop_time = 135 + 6
+        self.auton_init = False
+        self.teleop_init = False
 
-    def driveInches(self, inches):
-        power = 0.7 * 255
+        self.testing = False
+        self.from_button = False
 
-        if inches < 0:
-            power *= -1
+        # Buttons
+        self.enable_button = Button(self.screen, self.screen_width/2 - 50, self.screen_height/2 - 50, 100, 50, text='ENABLE', fontSize=20, margin=20, inactiveColour=(0,255,0), onClick=lambda: self.enable(), radius=20)
+        self.disable_button = Button(self.screen, self.screen_width/2 - 50, self.screen_height/2 + 25, 100, 50, text='DISABLE', fontSize=20, margin=20, inactiveColour=(255,0,0), onClick=lambda: self.disable(), radius=20)
+        self.state_text = TextBox(self.screen, self.screen_width/2 - 93, self.screen_height/2 - 200, 0, 0, fontSize=60, text=self.state, color=(255, 255, 255), inactiveColour=(255,255,255), borderColour=(0,0,0), borderThickness=0)
+        self.time_text = TextBox(self.screen, self.screen_width/2 - 93, self.screen_height/2 - 100, 0, 0, fontSize=60, text=str(round(self.auton_time)), color=(255, 255, 255), inactiveColour=(255,255,255), borderColour=(0,0,0), borderThickness=0)
+        self.switch_to_auton = Button(self.screen, self.screen_width/2 - 50, self.screen_height/2 + 100, 100, 50, text='AUTON', fontSize=20, margin=20, inactiveColour=(175, 0, 255), onClick=lambda: self.switch_state_a(), radius=20)
+        self.switch_to_teleop = Button(self.screen, self.screen_width/2 - 50, self.screen_height/2 + 175, 100, 50, text='TELEOP', fontSize=20, margin=20, inactiveColour=(175, 0, 255), onClick=lambda: self.switch_state_t(), radius=20)
+
+    def updateWidgets(self):
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                self.running = False
+                self.enabled = False
+                quit()
+        self.screen.fill((0, 64, 191))
+        self.state_text.text = self.state
+
+        if self.state == "AUTON":
+            self.teleop_time = 135 + 6
+            mins, secs = divmod(round(self.auton_time), 60)
+            time_str = '{:02d}:{:02d}'.format(mins, secs)
+            self.time_text.text = time_str
+            if (round(self.auton_time) == 0):
+                self.time_text.textColour = (255, 0, 0)
+        elif self.state == "TELEOP":
+            self.auton_time = 15
+            if not self.from_button:
+                mins, secs = divmod(round(self.teleop_time), 60)
+                time_str = '{:02d}:{:02d}'.format(mins, secs)
+                self.time_text.text = time_str
+                if (round(self.teleop_time) == 0):
+                    self.time_text.textColour = (255, 0, 0)
+                elif (round(self.teleop_time) == 30):
+                    self.time_text.textColour = (255, 255, 0)
+                elif (round(self.teleop_time) == 135):
+                    self.time_text.textColour = (0, 0, 0)
+            else:
+                self.time_text.textColour = (0, 0, 0)
+                self.time_text.text = ""
+        else:
+            self.time_text.textColour = (0, 0, 0)
+            self.time_text.text = ""
+
+        pygame_widgets.update(events)
+        pygame.display.update()
+
+    def switch_state_a(self):
+        self.state = "AUTON"
+        self.from_button = True
+        self.enabled = True
+
+    def switch_state_t(self):
+        self.state = "TELEOP"
+        self.from_button = True
+        self.enabled = True
+
+    def enable(self):
+        self.enabled = True
+
+    def disable(self):
+        self.enabled = False
+        self.state = "STANDBY"
 
     def clear(self):
         # for windows
@@ -51,18 +124,22 @@ class Main():
         else:
             _ = system('clear')
 
+    def standby(self):
+        if self.state == "STANDBY":
+            if not self.enabled:
+                self.updateWidgets()
+            else:
+                self.state = "AUTON"
+
     def autonInit(self):
-        while self.enabled == False:
-            print("Waiting for Enable")
-            self.clear()
+        if self.enabled and self.auton_init == False:
+            self.auton_running = True
+            self.first_pitch = False
+            self.auton_init = True
 
     def auton(self):
-        self.startTime = time.time()
-
-        first_pitch = False
-
-        while time.time() - self.startTime > 15:
-            self.robot.receive()
+        if self.auton_running:
+            # self.robot.receive()
             power = 0.6 * 255
             pitch = self.robot.pitch
 
@@ -72,9 +149,9 @@ class Main():
             self.robot.front_right_power = power
 
             if pitch > 15:
-                first_pitch = True
+                self.first_pitch = True
             
-            if first_pitch:
+            if self.first_pitch:
                 power = 0.4 * 255
 
                 if pitch > 3:
@@ -92,18 +169,45 @@ class Main():
                     self.robot.back_right_power = 0
                     self.robot.back_left_power = 0
                     self.robot.front_right_power = 0
+            
+            # quit logic
 
+            if self.enabled == False:
+                self.auton_running = False
+                self.auton_time = 15
 
+            if round(self.auton_time) == 0:
+                self.auton_running = False
+                self.enabled = False
+                if not self.testing:
+                    if self.from_button:
+                        self.state = "STANDBY"
+                        self.from_button = False
+                    else:
+                        self.state = "TELEOP"
+                else:
+                    self.state = "STANDBY"
+
+            self.auton_time -= 0.2
+            self.updateWidgets()
+
+    def stop(self):
+        self.robot.back_left_power = 0
+        self.robot.front_left_power = 0
+        self.robot.front_right_power = 0
+        self.robot.back_right_power = 0
+        # self.robot.send()
 
     def teleopInit(self):
-        self.running = True
-        while self.enabled == False:
-            print("Waiting for Enable")
-            self.clear()
+        if self.enabled and self.teleop_init == False:
+            self.running = True
+            self.state = "TELEOP"
+            self.teleop_init = True
 
     def teleop(self):
-        self.startTime = time.time()
-        while self.running:
+        if self.running:
+            # self.robot.receive()
+
             # get values from joystick
             linearX = self.controller.get_axis(1)
             linearY = self.controller.get_axis(0)
@@ -151,29 +255,38 @@ class Main():
             self.robot.front_right_power = frontRightPower
             self.robot.back_right_power = backRightPower
 
-            self.robot.send()
+            # self.robot.send()
             
             # quit logic
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
 
             if self.enabled == False:
                 self.running = False
+                self.state = "STANDBY"
+                self.from_button = False
+                self.teleop_time = 135 + 6
 
-            if time.time() - self.startTime >= 135:
-                self.running = False
-        
-            time.sleep(0.5)
+                if round(self.teleop_time) == 0:
+                    if not self.from_button:
+                        self.running = False
+                        self.enabled = False
+                        self.state = "STANDBY"
+                
+            if not self.from_button:
+                self.teleop_time -= 0.2
+            self.updateWidgets()
 
+    def loop(self):
+        while True:
+            if self.state == "STANDBY":
+                self.standby()
+            elif self.state == "AUTON":
+                self.autonInit()
+                self.auton()
+            elif self.state == "TELEOP":
+                self.teleopInit()
+                self.teleop()
 
-
-        self.controller.quit()
-        pygame.joystick.quit()
-
+            time.sleep(0.2)
 
 main = Main()
-main.autonInit()
-main.auton()
-main.teleopInit()
-main.teleop()
+main.loop()
