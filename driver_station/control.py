@@ -67,21 +67,29 @@ while running:
     angularZ *= 1.0
     
     # kinematic equations
-    
+
     # enable/disable logic
     enabled = controller.get_button(4)
     
-        
+    denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1)
+    frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 100
+    backLeftPower = ((linearY - linearX + angularZ) / denominator) * 100
+    frontRightPower = ((linearY - linearX - angularZ) / denominator) * 100
+    backRightPower = ((linearY + linearX - angularZ) / denominator) * 100
+    
+    robot.front_left_power = int(frontLeftPower)
+    robot.front_right_power = int(frontRightPower)
+    robot.back_left_power = int(backLeftPower)
+    robot.back_right_power = int(backRightPower)
+    
     
     # print(str(linearX) + " " + str(linearY) + " " + str(angularZ))
-    print(robot.enabled)
     # send data if enabled
     if(enabled):
-        robot.front_right_power = 100
         
         robot.enabled = True
         
-        robot.send()
+        print(robot.send())
         
         
         

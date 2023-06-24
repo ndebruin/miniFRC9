@@ -1,0 +1,136 @@
+##############################################
+# Syntax Coloring Map - AlfredoConnect-Receive
+##############################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+AlfredoConnectParser	KEYWORD1
+AlfredoConnect	KEYWORD1
+Key	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+update	KEYWORD2
+keyHeld	KEYWORD2
+getGamepadCount	KEYWORD2
+getAxisCount	KEYWORD2
+getButtonCount	KEYWORD2
+getAxis	KEYWORD2
+getRawAxis	KEYWORD2
+buttonHeld	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+Backquote	LITERAL1
+Backslash	LITERAL1
+BracketLeft	LITERAL1
+BracketRight	LITERAL1
+Comma	LITERAL1
+Digit0	LITERAL1
+Digit1	LITERAL1
+Digit2	LITERAL1
+Digit3	LITERAL1
+Digit4	LITERAL1
+Digit5	LITERAL1
+Digit6	LITERAL1
+Digit7	LITERAL1
+Digit8	LITERAL1
+Digit9	LITERAL1
+Equal	LITERAL1
+IntlBackslash	LITERAL1
+IntlRo	LITERAL1
+IntlYen	LITERAL1
+A	LITERAL1
+B	LITERAL1
+C	LITERAL1
+D	LITERAL1
+E	LITERAL1
+F	LITERAL1
+G	LITERAL1
+H	LITERAL1
+I	LITERAL1
+J	LITERAL1
+K	LITERAL1
+L	LITERAL1
+M	LITERAL1
+N	LITERAL1
+O	LITERAL1
+P	LITERAL1
+Q	LITERAL1
+R	LITERAL1
+S	LITERAL1
+T	LITERAL1
+U	LITERAL1
+V	LITERAL1
+W	LITERAL1
+X	LITERAL1
+Y	LITERAL1
+Z	LITERAL1
+Minus	LITERAL1
+Period	LITERAL1
+Quote	LITERAL1
+Semicolon	LITERAL1
+Slash	LITERAL1
+AltLeft	LITERAL1
+AltRight	LITERAL1
+Backspace	LITERAL1
+CapsLock	LITERAL1
+ContextMenu	LITERAL1
+ControlLeft	LITERAL1
+ControlRight	LITERAL1
+Enter	LITERAL1
+MetaLeft	LITERAL1
+MetaRight	LITERAL1
+ShiftLeft	LITERAL1
+ShiftRight	LITERAL1
+Space	LITERAL1
+Tab	LITERAL1
+Delete	LITERAL1
+End	LITERAL1
+Help	LITERAL1
+Home	LITERAL1
+Insert	LITERAL1
+PageDown	LITERAL1
+PageUp	LITERAL1
+ArrowDown	LITERAL1
+ArrowLeft	LITERAL1
+ArrowRight	LITERAL1
+ArrowUp	LITERAL1
+NumLock	LITERAL1
+Numpad0	LITERAL1
+Numpad1	LITERAL1
+Numpad2	LITERAL1
+Numpad3	LITERAL1
+Numpad4	LITERAL1
+Numpad5	LITERAL1
+Numpad6	LITERAL1
+Numpad7	LITERAL1
+Numpad8	LITERAL1
+Numpad9	LITERAL1
+NumpadAdd	LITERAL1
+NumpadBackspace	LITERAL1
+NumpadClear	LITERAL1
+NumpadClearEntry	LITERAL1
+NumpadComma	LITERAL1
+NumpadDecimal	LITERAL1
+NumpadDivide	LITERAL1
+NumpadEnter	LITERAL1
+NumpadEqual	LITERAL1
+NumpadHash	LITERAL1
+NumpadMemoryAdd	LITERAL1
+NumpadMemoryClear	LITERAL1
+NumpadMemoryRecall	LITERAL1
+NumpadMemoryStore	LITERAL1
+NumpadMemorySubtract
+NumpadMultiply	LITERAL1
+NumpadParenLeft	LITERAL1
+NumpadParenRight	LITERAL1
+NumpadStar	LITERAL1
+NumpadSubtract	LITERAL1

@@ -1,13 +1,17 @@
 #include <Arduino.h>
 #include <BluetoothSerial.h>
+#include <AlfredoConnect.h>
 #include <Alfredo_NoU2.h>
 #include <ICM_20948.h>
+#include <FastLED.h>
 
 #include "IMU.h"
-#include "DriverStationComms.h"
+
+#include "mecanumDrivetrain.h"
 
 // define bluetooth serial connection
-DriverStation DS;
+
+BluetoothSerial serialBT;
 String robotName = "roboeaglets";
 
 // define serial to other micros
@@ -34,17 +38,17 @@ bool sensorRead = false;
 
 unsigned long lastSent = millis();
 
-// BluetoothSerial btSerial;
+bool enabled = false;
 
 void setup() {
 
   // begin DS comms
-  DS.begin(robotName);
+  serialBT.begin(robotName);
 
   // start RSL
   RSL::initialize();
 
-
+  
 
   // start IMU
   //imu.begin(5, 4);
@@ -63,49 +67,22 @@ void loop() {
   // update IMU
   //imu.read();
 
-  // check for updates from DS
-  DS.read();
-
-  // send updates to DS
-  //DS.write();
-
   // RSL logic
-  if (DS.enabled) {
+  if (enabled) {
     RSL::setState(RSL_ENABLED);
   }
   else {
     RSL::setState(RSL_DISABLED);
   }
-  RSL::update();
-  
 
   // only write to hardware if enabled
-  if(DS.enabled)
-  {
-    frontLeftMotor.set(DS.frontLeft);
-    frontRightMotor.set(DS.frontRight);
-    backLeftMotor.set(DS.backLeft);
-    backRightMotor.set(DS.backRight);
-    //turretMotor.set(DS.turret);
-
+  if(enabled){
     
   }
 
-  if(DS.armPreset == 0){
-    fourBarServo.write(0);
-    secondJointServo.write(0);
-  }
-          
-  /*if(sensorRead){
-    DS.pitch = imu.getPitch();
-    DS.roll = imu.getRoll();
-    DS.yaw = imu.getYaw();
 
-    DS.turretAngle = 0;
-  }*/
-
-  // drivetrain kill if disabled
-  if(!DS.enabled){
+  // drivetrain e-stop if disabled
+  if(!enabled){
     frontLeftMotor.set(0);
     frontRightMotor.set(0);
     backLeftMotor.set(0);
