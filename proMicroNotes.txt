@@ -1,0 +1,7 @@
+1 will be used for TX
+0,4
+2,5
+3,6
+7,8
+
+UCSR0B &= ~(1<<RXEN0) disables RX on serial port?
