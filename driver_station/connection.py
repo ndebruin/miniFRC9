@@ -81,8 +81,6 @@ class Robot:
                                           int(self.enabled),
                                           self.led_int,
                                           int(self.flash))
-        
-        print(self.four_bar)
         try:
             self.ser.write(formatted.encode("utf-8"))
         except serial.SerialException:
