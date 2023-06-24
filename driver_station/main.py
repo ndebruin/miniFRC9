@@ -42,19 +42,11 @@ class Main():
         self.field_oriented = True
         self.enabled = False
         self.state = "STANDBY"
-        self.auton_time = 15
-        self.teleop_time = 135 + 6
-        self.auton_init = False
-        self.teleop_init = False
-
-        self.testing = False
-        self.from_button = False
 
         # Buttons
         self.enable_button = Button(self.screen, self.screen_width/2 - 50, self.screen_height/2 - 50, 100, 50, text='ENABLE', fontSize=20, margin=20, inactiveColour=(0,255,0), onClick=lambda: self.enable(), radius=20)
         self.disable_button = Button(self.screen, self.screen_width/2 - 50, self.screen_height/2 + 25, 100, 50, text='DISABLE', fontSize=20, margin=20, inactiveColour=(255,0,0), onClick=lambda: self.disable(), radius=20)
         self.state_text = TextBox(self.screen, self.screen_width/2 - 93, self.screen_height/2 - 200, 0, 0, fontSize=60, text=self.state, color=(255, 255, 255), inactiveColour=(255,255,255), borderColour=(0,0,0), borderThickness=0)
-        self.time_text = TextBox(self.screen, self.screen_width/2 - 93, self.screen_height/2 - 100, 0, 0, fontSize=60, text=str(round(self.auton_time)), color=(255, 255, 255), inactiveColour=(255,255,255), borderColour=(0,0,0), borderThickness=0)
         self.switch_to_auton = Button(self.screen, self.screen_width/2 - 50, self.screen_height/2 + 100, 100, 50, text='AUTON', fontSize=20, margin=20, inactiveColour=(175, 0, 255), onClick=lambda: self.switch_state_a(), radius=20)
         self.switch_to_teleop = Button(self.screen, self.screen_width/2 - 50, self.screen_height/2 + 175, 100, 50, text='TELEOP', fontSize=20, margin=20, inactiveColour=(175, 0, 255), onClick=lambda: self.switch_state_t(), radius=20)
 
@@ -65,55 +57,35 @@ class Main():
                 pygame.quit()
                 self.running = False
                 self.enabled = False
+                self.robot.enabled = False
                 quit()
-        self.screen.fill((0, 64, 191))
         self.state_text.text = self.state
-
-        if self.state == "AUTON":
-            self.teleop_time = 135 + 6
-            mins, secs = divmod(round(self.auton_time), 60)
-            time_str = '{:02d}:{:02d}'.format(mins, secs)
-            self.time_text.text = time_str
-            if (round(self.auton_time) == 0):
-                self.time_text.textColour = (255, 0, 0)
-        elif self.state == "TELEOP":
-            self.auton_time = 15
-            if not self.from_button:
-                mins, secs = divmod(round(self.teleop_time), 60)
-                time_str = '{:02d}:{:02d}'.format(mins, secs)
-                self.time_text.text = time_str
-                if (round(self.teleop_time) == 0):
-                    self.time_text.textColour = (255, 0, 0)
-                elif (round(self.teleop_time) == 30):
-                    self.time_text.textColour = (255, 255, 0)
-                elif (round(self.teleop_time) == 135):
-                    self.time_text.textColour = (0, 0, 0)
-            else:
-                self.time_text.textColour = (0, 0, 0)
-                self.time_text.text = ""
-        else:
-            self.time_text.textColour = (0, 0, 0)
-            self.time_text.text = ""
 
         pygame_widgets.update(events)
         pygame.display.update()
 
     def switch_state_a(self):
         self.state = "AUTON"
-        self.from_button = True
-        self.enabled = True
+        self.updateWidgets()
 
     def switch_state_t(self):
         self.state = "TELEOP"
-        self.from_button = True
-        self.enabled = True
+        self.updateWidgets()
 
     def enable(self):
-        self.enabled = True
+        if self.state != "STANDBY":
+            self.enabled = True
+            self.robot.enabled = True
+            self.screen.fill((0, 255, 0))
+            self.updateWidgets()
 
     def disable(self):
-        self.enabled = False
-        self.state = "STANDBY"
+        if self.state != "STANDBY":
+            self.enabled = False
+            self.robot.enabled = False
+            self.stop()
+            self.screen.fill((255, 0, 0))
+            self.updateWidgets()
 
     def clear(self):
         # for windows
@@ -127,18 +99,11 @@ class Main():
     def standby(self):
         if self.state == "STANDBY":
             if not self.enabled:
+                self.screen.fill((0, 64, 191))
                 self.updateWidgets()
-            else:
-                self.state = "AUTON"
-
-    def autonInit(self):
-        if self.enabled and self.auton_init == False:
-            self.auton_running = True
-            self.first_pitch = False
-            self.auton_init = True
 
     def auton(self):
-        if self.auton_running:
+        if self.enabled:
             # self.robot.receive()
             power = 0.6 * 255
             pitch = self.robot.pitch
@@ -169,26 +134,7 @@ class Main():
                     self.robot.back_right_power = 0
                     self.robot.back_left_power = 0
                     self.robot.front_right_power = 0
-            
-            # quit logic
-
-            if self.enabled == False:
-                self.auton_running = False
-                self.auton_time = 15
-
-            if round(self.auton_time) == 0:
-                self.auton_running = False
-                self.enabled = False
-                if not self.testing:
-                    if self.from_button:
-                        self.state = "STANDBY"
-                        self.from_button = False
-                    else:
-                        self.state = "TELEOP"
-                else:
-                    self.state = "STANDBY"
-
-            self.auton_time -= 0.2
+                    
             self.updateWidgets()
 
     def stop(self):
@@ -196,16 +142,10 @@ class Main():
         self.robot.front_left_power = 0
         self.robot.front_right_power = 0
         self.robot.back_right_power = 0
-        # self.robot.send()
-
-    def teleopInit(self):
-        if self.enabled and self.teleop_init == False:
-            self.running = True
-            self.state = "TELEOP"
-            self.teleop_init = True
+        self.robot.send()
 
     def teleop(self):
-        if self.running:
+        if self.enabled:
             self.robot.receive()
 
             # get values from joystick
@@ -233,27 +173,27 @@ class Main():
             angularZ *= -1.0
             
             # kinematic equations
-            # if self.field_oriented:
-            #     botHeading = math.radians(self.robot.yaw)
-            #     rotX = linearX * math.cos(-botHeading) - linearY * math.sin(-botHeading)
-            #     rotY = linearX * math.sin(-botHeading) + linearY * math.cos(-botHeading)
+            if self.field_oriented:
+                botHeading = math.radians(self.robot.yaw)
+                rotX = linearX * math.cos(-botHeading) - linearY * math.sin(-botHeading)
+                rotY = linearX * math.sin(-botHeading) + linearY * math.cos(-botHeading)
 
-            #     denominator = max(abs(rotY) + abs(rotX) + abs(angularZ), 1)
-            #     frontLeftPower = ((rotY + rotX + angularZ) / denominator) * 255
-            #     backLeftPower = ((rotY - rotX + angularZ) / denominator) * 255
-            #     frontRightPower = ((rotY - rotX - angularZ) / denominator) * 255
-            #     backRightPower = ((rotY + rotX - angularZ) / denominator) * 255
-            # else:
-            #     denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1)
-            #     frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 255
-            #     backLeftPower = ((linearY - linearX + angularZ) / denominator) * 255
-            #     frontRightPower = ((linearY - linearX - angularZ) / denominator) * 255
-            #     backRightPower = ((linearY + linearX - angularZ) / denominator) * 255
+                denominator = max(abs(rotY) + abs(rotX) + abs(angularZ), 1)
+                frontLeftPower = ((rotY + rotX + angularZ) / denominator) * 255
+                backLeftPower = ((rotY - rotX + angularZ) / denominator) * 255
+                frontRightPower = ((rotY - rotX - angularZ) / denominator) * 255
+                backRightPower = ((rotY + rotX - angularZ) / denominator) * 255
+            else:
+                denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1)
+                frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 255
+                backLeftPower = ((linearY - linearX + angularZ) / denominator) * 255
+                frontRightPower = ((linearY - linearX - angularZ) / denominator) * 255
+                backRightPower = ((linearY + linearX - angularZ) / denominator) * 255
 
-            # self.robot.front_left_power = frontLeftPower
-            # self.robot.back_left_power = backLeftPower
-            # self.robot.front_right_power = frontRightPower
-            # self.robot.back_right_power = backRightPower
+            self.robot.front_left_power = frontLeftPower
+            self.robot.back_left_power = backLeftPower
+            self.robot.front_right_power = frontRightPower
+            self.robot.back_right_power = backRightPower
 
             self.robot.four_bar = linearX
             self.robot.second_joint = angularZ
@@ -263,21 +203,6 @@ class Main():
             self.robot.send()
             
             # quit logic
-
-            if self.enabled == False:
-                self.running = False
-                self.state = "STANDBY"
-                self.from_button = False
-                self.teleop_time = 135 + 6
-
-                if round(self.teleop_time) == 0:
-                    if not self.from_button:
-                        self.running = False
-                        self.enabled = False
-                        self.state = "STANDBY"
-                
-            if not self.from_button:
-                self.teleop_time -= 0.2
             self.updateWidgets()
 
     def loop(self):
@@ -285,12 +210,9 @@ class Main():
             if self.state == "STANDBY":
                 self.standby()
             elif self.state == "AUTON":
-                self.autonInit()
                 self.auton()
             elif self.state == "TELEOP":
-                self.teleopInit()
                 self.teleop()
-
             time.sleep(0.2)
 
 main = Main()
