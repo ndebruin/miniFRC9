@@ -15,14 +15,14 @@ void mecanumDrivetrain::begin(){
 
 void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw) {
   double botHeading = yaw;
-  double rotX = linearX * cos(-botHeading) - linearY * sin(-botHeading)
-  double rotY = linearX * sin(-botHeading) + linearY * cos(-botHeading)
+  double rotX = linearX * cos(-botHeading) - linearY * sin(-botHeading);
+  double rotY = linearX * sin(-botHeading) + linearY * cos(-botHeading);
 
-  denominator = max(abs(rotY) + abs(rotX) + abs(angularZ), 1)
-  frontLeftPower = ((rotY + rotX + angularZ) / denominator) * 255
-  backLeftPower = ((rotY - rotX + angularZ) / denominator) * 255
-  frontRightPower = ((rotY - rotX - angularZ) / denominator) * 255
-  backRightPower = ((rotY + rotX - angularZ) / denominator) * 255
+  double denominator = max(abs(rotY) + abs(rotX) + abs(angularZ), 1.0);
+  frontLeftPower = ((rotY + rotX + angularZ) / denominator) * 255;
+  backLeftPower = ((rotY - rotX + angularZ) / denominator) * 255;
+  frontRightPower = ((rotY - rotX - angularZ) / denominator) * 255;
+  backRightPower = ((rotY + rotX - angularZ) / denominator) * 255;
 
   _frontLeftMotor->set(frontLeftPower);
   _frontRightMotor->set(frontRightPower);
@@ -30,12 +30,12 @@ void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, boo
   _backRightMotor->set(backRightPower);
 }
 
-void mecanumDrivetrain:set(double linearX, double linearY, double angularZ) {
-  denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1)
-  frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 255
-  backLeftPower = ((linearY - linearX + angularZ) / denominator) * 255
-  frontRightPower = ((linearY - linearX - angularZ) / denominator) * 255
-  backRightPower = ((linearY + linearX - angularZ) / denominator) * 255
+void mecanumDrivetrain::set(double linearX, double linearY, double angularZ) {
+  double denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1.0);
+  frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 255;
+  backLeftPower = ((linearY - linearX + angularZ) / denominator) * 255;
+  frontRightPower = ((linearY - linearX - angularZ) / denominator) * 255;
+  backRightPower = ((linearY + linearX - angularZ) / denominator) * 255;
 
   _frontLeftMotor->set(frontLeftPower);
   _frontRightMotor->set(frontRightPower);
