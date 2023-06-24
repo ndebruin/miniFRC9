@@ -18,8 +18,7 @@ uint8_t DriverStation::read(){
     turret = serialBt.readStringUntil(',').toInt();
 
     intake = serialBt.readStringUntil(',').toInt();
-    fourBar = serialBt.readStringUntil(',').toInt();
-    secondJoint = serialBt.readStringUntil(',').toInt();
+    armPreset = serialBt.readStringUntil(',').toInt();
     
     enabled = serialBt.readStringUntil(',').toInt();
     ledState = serialBt.readStringUntil(',').toInt();

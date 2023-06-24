@@ -31,8 +31,7 @@ class Robot:
         self.back_right_power = 0
         
         self.intake = 0
-        self.four_bar = 0
-        self.second_joint = 0
+        self.arm_preset = 0
         
         
         self.turret_power = 0
@@ -42,15 +41,15 @@ class Robot:
         self.flash = False
         
         # frontL,frontR,backL,backR,turret,enabled(as binary int),led(as 0-2),flash(as binary int)
-        self.tx_string = "{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d}"
+        self.tx_string = "{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d}"
 
-        # try: 
-        #     self.ser = serial.Serial(dev, baud)
-        # except serial.SerialException:
-        #     print("PORT CANNOT BE OPENED")
-        #     return 1 # port cannot be opened
-        # else:
-        #     return 0
+        try: 
+            self.ser = serial.Serial(dev, baud)
+        except serial.SerialException:
+            print("PORT CANNOT BE OPENED")
+            #return 1 # port cannot be opened
+        #else:
+            #return 0
     
     
     
@@ -78,12 +77,12 @@ class Robot:
                                           self.back_right_power,
                                           self.turret_power,
                                           self.intake,
-                                          self.four_bar,
-                                          self.second_joint,
+                                          self.arm_preset,
                                           int(self.enabled),
                                           self.led_int,
                                           int(self.flash))
         
+        print(self.four_bar)
         try:
             self.ser.write(formatted.encode("utf-8"))
         except serial.SerialException:

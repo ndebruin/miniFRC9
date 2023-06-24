@@ -8,7 +8,7 @@ from pygame_widgets.button import Button
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.progressbar import ProgressBar
 import serial
-import flet as ft
+# import flet as ft
 import threading
 
 from time import sleep
@@ -257,6 +257,8 @@ class Main():
 
             self.robot.four_bar = linearX
             self.robot.second_joint = angularZ
+
+            print("sending" + str(linearX))
 
             self.robot.send()
             

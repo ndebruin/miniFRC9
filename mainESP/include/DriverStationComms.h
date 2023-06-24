@@ -17,7 +17,7 @@ class DriverStation
 
         // rx values
         uint8_t enabled, ledState, flash;
-        uint8_t intake, fourBar, secondJoint;
+        uint8_t intake, armPreset;
         int16_t frontLeft, frontRight, backLeft, backRight, turret;
 
         // tx values

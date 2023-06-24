@@ -4,6 +4,7 @@
 
 import pygame
 import serial
+from connection import Robot
 
 from time import sleep
 from os import environ
@@ -30,13 +31,7 @@ enabledCol = (0,255,0)
 disabledCol = (255,0,0)
 
 
-try: 
-    ser = serial.Serial('/dev/rfcomm0', 115200)
-except serial.SerialException:
-    print("Port cannot be opened")
-    quit()
-    
-ser.write_timeout = 2 
+robot = Robot()
 
 enabled = True
 
@@ -57,7 +52,6 @@ while running:
     if(linearX > 0.994):linearX = 1
     if(linearY > 0.994):linearY = 1
     if(angularZ > 0.994):angularZ = 1
-        
     # deadzoning
     if(abs(linearX) < 0.01):linearX = 0
     if(abs(linearY) < 0.01):linearY = 0
@@ -75,12 +69,9 @@ while running:
     # kinematic equations
     
     # enable/disable logic
-    enabled = controller.get_button(4)
+    enabled = True
     
-    if(controller.get_button(0)):
-        intake = 1
-    elif(controller.get_button(1)):
-        intake = 0
+    
         
     
     # print(str(linearX) + " " + str(linearY) + " " + str(angularZ))
@@ -89,13 +80,20 @@ while running:
     if(enabled):
         # send values
         # data = "{:.3f},{:.3f}\n".format(linearX, angularZ)
-        data = "e,{:d},{:.3f},{:.3f},{:.3f}\n".format(intake,linearX,linearY, angularZ)
-        print(data)
+        robot.four_bar = 0
+        robot.second_joint = 0
+        if(controller.get_button(4)):
+            robot.four_bar = 180
+        if(controller.get_button(0)):
+            robot.second_joint = 180
         
-        try:
-            ser.write(data.encode())
-        except serial.SerialTimeoutException:
-            print("COULDN'T SEND")
+        robot.enabled = True
+        
+        robot.send()
+        sleep(0.2)
+        
+        
+        
         
         # set screen color
         screen.fill(enabledCol)
@@ -105,7 +103,9 @@ while running:
         
     else:
         # send all 0s (technically)
-        ser.write("d".encode())
+        
+        robot.enabled = False
+        robot.send()
         
         # set screen color
         screen.fill(disabledCol)

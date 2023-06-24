@@ -34,6 +34,8 @@ bool sensorRead = false;
 
 unsigned long lastSent = millis();
 
+// BluetoothSerial btSerial;
+
 void setup() {
 
   // begin DS comms
@@ -41,6 +43,8 @@ void setup() {
 
   // start RSL
   RSL::initialize();
+
+
 
   // start IMU
   //imu.begin(5, 4);
@@ -50,8 +54,10 @@ void setup() {
   frontRightMotor.setInverted(true);
   backLeftMotor.setInverted(false);
   backRightMotor.setInverted(true);
+
 }
 
+bool firstWrite = true;
 void loop() {
 
   // update IMU
@@ -61,7 +67,7 @@ void loop() {
   DS.read();
 
   // send updates to DS
-  DS.write();
+  //DS.write();
 
   // RSL logic
   if (DS.enabled) {
@@ -71,6 +77,7 @@ void loop() {
     RSL::setState(RSL_DISABLED);
   }
   RSL::update();
+  
 
   // only write to hardware if enabled
   if(DS.enabled)
@@ -80,19 +87,22 @@ void loop() {
     backLeftMotor.set(DS.backLeft);
     backRightMotor.set(DS.backRight);
     turretMotor.set(DS.turret);
+
     
-    intakeServo.write(DS.intake);
-    fourBarServo.write(DS.fourBar);
-    secondJointServo.write(DS.secondJoint);
   }
 
-  if(sensorRead){
+  if(DS.armPreset == 0){
+    fourBarServo.write(0);
+    secondJointServo.write(0);
+  }
+          
+  /*if(sensorRead){
     DS.pitch = imu.getPitch();
     DS.roll = imu.getRoll();
     DS.yaw = imu.getYaw();
 
     DS.turretAngle = 0;
-  }
+  }*/
 
   // drivetrain kill if disabled
   if(!DS.enabled){
