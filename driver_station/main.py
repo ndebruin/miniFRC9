@@ -206,12 +206,12 @@ class Main():
 
     def teleop(self):
         if self.running:
-            # self.robot.receive()
+            self.robot.receive()
 
             # get values from joystick
-            linearX = self.controller.get_axis(1)
-            linearY = self.controller.get_axis(0)
-            angularZ = self.controller.get_axis(3)
+            linearX = (self.controller.get_axis(1) * 90) + 90
+            linearY = (self.controller.get_axis(0) * 90) + 90
+            angularZ = (self.controller.get_axis(3) * 90) + 90
             
             # end detection
             if(linearX > 0.994): linearX = 1
@@ -233,29 +233,32 @@ class Main():
             angularZ *= -1.0
             
             # kinematic equations
-            if self.field_oriented:
-                botHeading = math.radians(self.robot.yaw)
-                rotX = linearX * math.cos(-botHeading) - linearY * math.sin(-botHeading)
-                rotY = linearX * math.sin(-botHeading) + linearY * math.cos(-botHeading)
+            # if self.field_oriented:
+            #     botHeading = math.radians(self.robot.yaw)
+            #     rotX = linearX * math.cos(-botHeading) - linearY * math.sin(-botHeading)
+            #     rotY = linearX * math.sin(-botHeading) + linearY * math.cos(-botHeading)
 
-                denominator = max(abs(rotY) + abs(rotX) + abs(angularZ), 1)
-                frontLeftPower = ((rotY + rotX + angularZ) / denominator) * 255
-                backLeftPower = ((rotY - rotX + angularZ) / denominator) * 255
-                frontRightPower = ((rotY - rotX - angularZ) / denominator) * 255
-                backRightPower = ((rotY + rotX - angularZ) / denominator) * 255
-            else:
-                denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1)
-                frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 255
-                backLeftPower = ((linearY - linearX + angularZ) / denominator) * 255
-                frontRightPower = ((linearY - linearX - angularZ) / denominator) * 255
-                backRightPower = ((linearY + linearX - angularZ) / denominator) * 255
+            #     denominator = max(abs(rotY) + abs(rotX) + abs(angularZ), 1)
+            #     frontLeftPower = ((rotY + rotX + angularZ) / denominator) * 255
+            #     backLeftPower = ((rotY - rotX + angularZ) / denominator) * 255
+            #     frontRightPower = ((rotY - rotX - angularZ) / denominator) * 255
+            #     backRightPower = ((rotY + rotX - angularZ) / denominator) * 255
+            # else:
+            #     denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1)
+            #     frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 255
+            #     backLeftPower = ((linearY - linearX + angularZ) / denominator) * 255
+            #     frontRightPower = ((linearY - linearX - angularZ) / denominator) * 255
+            #     backRightPower = ((linearY + linearX - angularZ) / denominator) * 255
 
-            self.robot.front_left_power = frontLeftPower
-            self.robot.back_left_power = backLeftPower
-            self.robot.front_right_power = frontRightPower
-            self.robot.back_right_power = backRightPower
+            # self.robot.front_left_power = frontLeftPower
+            # self.robot.back_left_power = backLeftPower
+            # self.robot.front_right_power = frontRightPower
+            # self.robot.back_right_power = backRightPower
 
-            # self.robot.send()
+            self.robot.four_bar = linearX
+            self.robot.second_joint = angularZ
+
+            self.robot.send()
             
             # quit logic
 
