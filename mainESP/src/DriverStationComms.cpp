@@ -22,7 +22,7 @@ uint8_t DriverStation::read(){
     
     enabled = serialBt.readStringUntil(',').toInt();
     ledState = serialBt.readStringUntil(',').toInt();
-    flash = serialBt.readStringUntil(',').toInt();
+    flash = serialBt.readStringUntil('\n').toInt();
     return 0;
   }
   return 0;

@@ -86,7 +86,7 @@ void loop() {
     frontRightMotor.set(DS.frontRight);
     backLeftMotor.set(DS.backLeft);
     backRightMotor.set(DS.backRight);
-    turretMotor.set(DS.turret);
+    //turretMotor.set(DS.turret);
 
     
   }
