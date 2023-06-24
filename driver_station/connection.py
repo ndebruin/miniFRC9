@@ -30,6 +30,11 @@ class Robot:
         self.back_left_power = 0
         self.back_right_power = 0
         
+        self.intake = 0
+        self.four_bar = 0
+        self.second_joint = 0
+        
+        
         self.turret_power = 0
         self.enabled = False
         self.led = "Rainbow" # "Purple" or "Yellow"
@@ -37,7 +42,7 @@ class Robot:
         self.flash = False
         
         # frontL,frontR,backL,backR,turret,enabled(as binary int),led(as 0-2),flash(as binary int)
-        self.tx_string = "{:d},{ :d},{:d},{:d},{:d},{:d},{:d},{:d}"
+        self.tx_string = "{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d},{:d}"
 
         # try: 
         #     self.ser = serial.Serial(dev, baud)
@@ -51,12 +56,14 @@ class Robot:
     
     # internal method, dw abt it
     def led_set(self):
-        if(self.led == "Rainbow"):
+        if(self.led == "Off"):
             self.led_int = 0
-        elif(self.led == "Purple"):
+        elif(self.led == "Rainbow"):
             self.led_int = 1
-        elif(self.led == "Yellow"):
+        elif(self.led == "Purple"):
             self.led_int = 2
+        elif(self.led == "Yellow"):
+            self.led_int = 3
     
     
     
@@ -70,6 +77,9 @@ class Robot:
                                           self.back_left_power, 
                                           self.back_right_power,
                                           self.turret_power,
+                                          self.intake,
+                                          self.four_bar,
+                                          self.second_joint,
                                           int(self.enabled),
                                           self.led_int,
                                           int(self.flash))

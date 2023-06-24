@@ -35,12 +35,16 @@ try:
 except serial.SerialException:
     print("Port cannot be opened")
     quit()
+    
+ser.write_timeout = 2 
 
 enabled = True
 
 running = True
 
 initialDisable = True
+
+intake = 0
 
 while running:
     
@@ -64,25 +68,34 @@ while running:
     # angularZ *= 1.0
     
     # axis inversion (if needed)
-    linearX *= -1.0
+    linearX *= 1.0
     linearY *= 1.0
-    angularZ *= -1.0
+    angularZ *= 1.0
     
     # kinematic equations
     
     # enable/disable logic
     enabled = controller.get_button(4)
     
+    if(controller.get_button(0)):
+        intake = 1
+    elif(controller.get_button(1)):
+        intake = 0
+        
+    
     # print(str(linearX) + " " + str(linearY) + " " + str(angularZ))
     
     # send data if enabled
     if(enabled):
         # send values
-        data = "{:.3f},{:.3f}\n".format(linearX, angularZ)
+        # data = "{:.3f},{:.3f}\n".format(linearX, angularZ)
+        data = "e,{:d},{:.3f},{:.3f},{:.3f}\n".format(intake,linearX,linearY, angularZ)
         print(data)
         
-        
-        ser.write(data.encode())
+        try:
+            ser.write(data.encode())
+        except serial.SerialTimeoutException:
+            print("COULDN'T SEND")
         
         # set screen color
         screen.fill(enabledCol)
@@ -92,9 +105,7 @@ while running:
         
     else:
         # send all 0s (technically)
-        if initialDisable:
-            ser.write("0,0,0\n".encode())
-            initialDisable = False
+        ser.write("d".encode())
         
         # set screen color
         screen.fill(disabledCol)

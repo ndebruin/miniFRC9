@@ -4,69 +4,103 @@
 #include <ICM_20948.h>
 
 #include "IMU.h"
+#include "DriverStationComms.h"
 
 // define bluetooth serial connection
-BluetoothSerial bluetooth;
+DriverStation DS;
 String robotName = "roboeaglets";
 
+// define serial to other micros
+// espCam camera;
+// auxIO io;
+
 // define motors
-NoU_Motor leftMotor(6);
-NoU_Motor rightMotor(5);
+NoU_Motor frontLeftMotor(2);
+NoU_Motor frontRightMotor(1);
+NoU_Motor backLeftMotor(4);
+NoU_Motor backRightMotor(3);
+NoU_Motor turretMotor(5);
 
-// define drivetrain
-NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
+// define servos
+NoU_Servo intakeServo(1);
+NoU_Servo fourBarServo(2);
+NoU_Servo secondJointServo(3);
 
+// define imu and magnetic encoder objects
 IMU imu;
 
-// define values passed over bt serial
-float linearX, angularZ;
-unsigned long lastTimePacketReceived = 0;
+// read from sensors
+bool sensorRead = false;
 
+unsigned long lastSent = millis();
 
 void setup() {
-  // put your setup code here, to run once:
-  
-  // begin bluetooth connection
-  bluetooth.begin(robotName);
+
+  // begin DS comms
+  DS.begin(robotName);
 
   // start RSL
   RSL::initialize();
 
   // start IMU
-  imu.begin(5, 4);
+  //imu.begin(5, 4);
 
   // set direction of motors
-  leftMotor.setInverted(false);
-  rightMotor.setInverted(true);
+  frontLeftMotor.setInverted(false);
+  frontRightMotor.setInverted(true);
+  backLeftMotor.setInverted(false);
+  backRightMotor.setInverted(true);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
-  // if we have a bluetooth packet
-  // pull data
-  while (bluetooth.available() > 0) {
-    lastTimePacketReceived = millis();
-    linearX = -bluetooth.readStringUntil(',').toFloat();
-    angularZ = bluetooth.readStringUntil('\n').toFloat();
-  }
 
   // update IMU
-  imu.read();
+  //imu.read();
+
+  // check for updates from DS
+  DS.read();
+
+  // send updates to DS
+  DS.write();
 
   // RSL logic
-  if (millis() - lastTimePacketReceived > 100) {
-    RSL::setState(RSL_DISABLED);
+  if (DS.enabled) {
+    RSL::setState(RSL_ENABLED);
   }
   else {
-    RSL::setState(RSL_ENABLED);
+    RSL::setState(RSL_DISABLED);
   }
   RSL::update();
 
+  // only write to hardware if enabled
+  if(DS.enabled)
+  {
+    frontLeftMotor.set(DS.frontLeft);
+    frontRightMotor.set(DS.frontRight);
+    backLeftMotor.set(DS.backLeft);
+    backRightMotor.set(DS.backRight);
+    turretMotor.set(DS.turret);
+    
+    intakeServo.write(DS.intake);
+    fourBarServo.write(DS.fourBar);
+    secondJointServo.write(DS.secondJoint);
+  }
 
-  // write data to drivetrain
-  // NOTE: is expecting -1 -> 1 values straight from joystick
-  drivetrain.arcadeDrive(linearX, angularZ);
-  
+  if(sensorRead){
+    DS.pitch = imu.getPitch();
+    DS.roll = imu.getRoll();
+    DS.yaw = imu.getYaw();
+
+    DS.turretAngle = 0;
+  }
+
+  // drivetrain kill if disabled
+  if(!DS.enabled){
+    frontLeftMotor.set(0);
+    frontRightMotor.set(0);
+    backLeftMotor.set(0);
+    backRightMotor.set(0);
+  }
+
 }
 
