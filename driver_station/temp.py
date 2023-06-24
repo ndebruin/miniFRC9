@@ -4,10 +4,14 @@ from time import sleep
 
 robot = Robot()
 
-angle = int(input("help"))
+robot.front_right_power = 100
 
-robot.four_bar = angle
-robot.second_joint = angle
+robot.enabled = 1
 
-sleep(1)
+sleep(5)
+robot.send()
+
+robot.front_right_power = 0
+robot.enabled = 0
+sleep(5)
 robot.send()

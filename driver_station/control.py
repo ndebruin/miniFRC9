@@ -67,30 +67,29 @@ while running:
     angularZ *= 1.0
     
     # kinematic equations
-    
+
     # enable/disable logic
-    enabled = True
+    enabled = controller.get_button(4)
     
+    denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1)
+    frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 100
+    backLeftPower = ((linearY - linearX + angularZ) / denominator) * 100
+    frontRightPower = ((linearY - linearX - angularZ) / denominator) * 100
+    backRightPower = ((linearY + linearX - angularZ) / denominator) * 100
     
-        
+    robot.front_left_power = int(frontLeftPower)
+    robot.front_right_power = int(frontRightPower)
+    robot.back_left_power = int(backLeftPower)
+    robot.back_right_power = int(backRightPower)
+    
     
     # print(str(linearX) + " " + str(linearY) + " " + str(angularZ))
-    
     # send data if enabled
     if(enabled):
-        # send values
-        # data = "{:.3f},{:.3f}\n".format(linearX, angularZ)
-        robot.four_bar = 0
-        robot.second_joint = 0
-        if(controller.get_button(4)):
-            robot.four_bar = 180
-        if(controller.get_button(0)):
-            robot.second_joint = 180
         
         robot.enabled = True
         
-        robot.send()
-        sleep(0.2)
+        print(robot.send())
         
         
         
@@ -101,10 +100,11 @@ while running:
         
         initialDisable = True
         
-    else:
+    elif(not enabled):
         # send all 0s (technically)
         
         robot.enabled = False
+        
         robot.send()
         
         # set screen color
