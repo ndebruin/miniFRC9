@@ -71,7 +71,10 @@ while running:
     # enable/disable logic
     enabled = True
     
-    
+    if (controller.get_button(4)):
+        enabled = True
+    else:
+        enabled = False
         
     
     # print(str(linearX) + " " + str(linearY) + " " + str(angularZ))
@@ -82,10 +85,6 @@ while running:
         # data = "{:.3f},{:.3f}\n".format(linearX, angularZ)
         robot.four_bar = 0
         robot.second_joint = 0
-        if(controller.get_button(4)):
-            robot.four_bar = 180
-        if(controller.get_button(0)):
-            robot.second_joint = 180
         
         robot.enabled = True
         
