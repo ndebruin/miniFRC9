@@ -13,16 +13,36 @@ void mecanumDrivetrain::begin(){
   _backRightMotor->set(0);
 }
 
-void mecanumDrivetrain::set(double linearX, double linearY, double angularZ){
-  // perform kinematic equations
-  float frontLeft = (linearX - linearY - angularZ);
-  float frontRight = (linearX + linearY + angularZ);
-  float backLeft = (linearX + linearY - angularZ);
-  float backRight = (linearX - linearY + angularZ);
+void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw) {
+  double botHeading = yaw;
+  double rotX = linearX * cos(-botHeading) - linearY * sin(-botHeading)
+  double rotY = linearX * sin(-botHeading) + linearY * cos(-botHeading)
 
-  // write to each motor
-  _frontLeftMotor->set(frontLeft);
-  _frontRightMotor->set(frontRight);
-  _backLeftMotor->set(backLeft);
-  _backRightMotor->set(backRight);
+  denominator = max(abs(rotY) + abs(rotX) + abs(angularZ), 1)
+  frontLeftPower = ((rotY + rotX + angularZ) / denominator) * 255
+  backLeftPower = ((rotY - rotX + angularZ) / denominator) * 255
+  frontRightPower = ((rotY - rotX - angularZ) / denominator) * 255
+  backRightPower = ((rotY + rotX - angularZ) / denominator) * 255
+
+  _frontLeftMotor->set(frontLeftPower);
+  _frontRightMotor->set(frontRightPower);
+  _backLeftMotor->set(backLeftPower);
+  _backRightMotor->set(backRightPower);
+}
+
+void mecanumDrivetrain:set(double linearX, double linearY, double angularZ) {
+  denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1)
+  frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 255
+  backLeftPower = ((linearY - linearX + angularZ) / denominator) * 255
+  frontRightPower = ((linearY - linearX - angularZ) / denominator) * 255
+  backRightPower = ((linearY + linearX - angularZ) / denominator) * 255
+
+  _frontLeftMotor->set(frontLeftPower);
+  _frontRightMotor->set(frontRightPower);
+  _backLeftMotor->set(backLeftPower);
+  _backRightMotor->set(backRightPower);
+}
+
+double mecanumDrivetrain::toRadians(double degrees) {
+  return degrees * (PI / 180);
 }
