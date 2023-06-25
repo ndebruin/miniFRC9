@@ -48,10 +48,15 @@ double mecanumDrivetrain::set(double linearX, double linearY, double angularZ) {
   }
 
   // apply jerk limits
-  frontLeftCurrentPower = applyJerkLimit(frontLeftCurrentPower, frontLeftDesiredPower);
+  /*frontLeftCurrentPower = applyJerkLimit(frontLeftCurrentPower, frontLeftDesiredPower);
   frontRightCurrentPower = applyJerkLimit(frontRightCurrentPower, frontRightDesiredPower);
   backLeftCurrentPower = applyJerkLimit(backLeftCurrentPower, backLeftDesiredPower);
-  backRightCurrentPower = applyJerkLimit(backRightCurrentPower, backRightDesiredPower);
+  backRightCurrentPower = applyJerkLimit(backRightCurrentPower, backRightDesiredPower);*/
+
+  frontLeftCurrentPower = frontLeftDesiredPower;
+  frontRightCurrentPower = frontRightDesiredPower;
+  backLeftCurrentPower = backLeftDesiredPower;
+  backRightCurrentPower = backRightDesiredPower;
 
 
   _frontLeftMotor->set(frontLeftCurrentPower);

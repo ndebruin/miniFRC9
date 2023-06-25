@@ -9,7 +9,7 @@ Encoder backRight = tempEncoder;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  Serial1.begin(9600);
   // disable serial port rx
   UCSR1B &= ~(1<<RXEN1);
 
@@ -29,7 +29,7 @@ void loop() {
   // send every 50ms
   if(millis() - lastSend > 50){
     lastSend = millis();
-    Serial.println(sendStr);
+    Serial1.println(sendStr);
   }
   // dogwatch led blink every 0.5s
   if(millis() - lastBlink > 500){
