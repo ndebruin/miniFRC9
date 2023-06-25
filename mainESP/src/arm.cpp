@@ -2,7 +2,7 @@
 #include <Alfredo_NoU2.h>
 #include "arm.h"
 
-arm:arm(NoU_Servo* fourbar_joint, NoU_Servo* second_joint) 
+arm::arm(NoU_Servo* fourbar_joint, NoU_Servo* second_joint) 
                                     : _fourbar_joint(fourbar_joint), _second_joint(second_joint)
 { }
 
@@ -31,5 +31,9 @@ void arm::set(String preset) {
     else if (preset.equals("FLOOR")) {
         _fourbar_joint->write(_fourbar_angle_floor);
         _second_joint->write(_second_angle_floor);
+    }
+    else if (preset.equals("STOW")) {
+        _fourbar_joint->write(0);
+        _second_joint->write(0);
     }
 }
