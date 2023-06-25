@@ -20,12 +20,24 @@ class mecanumDrivetrain
         NoU_Motor* _backLeftMotor;
         NoU_Motor* _backRightMotor;
         
-        float frontLeftPower;
-        float backLeftPower;
-        float frontRightPower;
-        float backRightPower;
+        float frontLeftCurrentPower;
+        float backLeftCurrentPower;
+        float frontRightCurrentPower;
+        float backRightCurrentPower;
+
+        float frontLeftDesiredPower;
+        float backLeftDesiredPower;
+        float frontRightDesiredPower;
+        float backRightDesiredPower;
+
+        // jerk limit!! in terms of change in -1 - 1 domain
+
+        double jerkLimit = 0.1;
+
 
         double toRadians(double degrees);
+
+        double applyJerkLimit(double current, double desired);
 };
 
 #endif

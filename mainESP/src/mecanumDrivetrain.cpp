@@ -13,7 +13,7 @@ void mecanumDrivetrain::begin(){
   _backRightMotor->set(0);
 }
 
-void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw) {
+/*void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw) {
   double botHeading = yaw;
   double rotX = linearX * cos(-botHeading) - linearY * sin(-botHeading);
   double rotY = linearX * sin(-botHeading) + linearY * cos(-botHeading);
@@ -28,31 +28,56 @@ void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, boo
   _frontRightMotor->set(frontRightPower);
   _backLeftMotor->set(backLeftPower);
   _backRightMotor->set(backRightPower);
-}
+}*/
 
 double mecanumDrivetrain::set(double linearX, double linearY, double angularZ) {
-  double maxMagnitude = max(fabs(frontLeftPower), max(fabs(frontRightPower), max(fabs(backLeftPower), fabs(backRightPower))));
-  frontLeftPower = ((linearY + linearX + angularZ));
-  backLeftPower = ((linearY - linearX + angularZ));
-  frontRightPower = ((linearY - linearX - angularZ));
-  backRightPower = ((linearY + linearX - angularZ));
+
+  
+  frontLeftDesiredPower = ((linearY + linearX + angularZ));
+  backLeftDesiredPower = ((linearY - linearX + angularZ));
+  frontRightDesiredPower = ((linearY - linearX - angularZ));
+  backRightDesiredPower = ((linearY + linearX - angularZ));
+
+  // ensure motor output is never greater than -1/1
+  double maxMagnitude = max(fabs(frontLeftDesiredPower), max(fabs(frontRightDesiredPower), max(fabs(backLeftDesiredPower), fabs(backRightDesiredPower))));
   if(maxMagnitude > 1.0){
-    frontLeftPower /= maxMagnitude;
-    frontRightPower /= maxMagnitude;
-    backLeftPower /= maxMagnitude;
-    backRightPower /= maxMagnitude;    
+    frontLeftDesiredPower /= maxMagnitude;
+    frontRightDesiredPower /= maxMagnitude;
+    backLeftDesiredPower /= maxMagnitude;
+    backRightDesiredPower /= maxMagnitude;    
   }
 
-  _frontLeftMotor->set(frontLeftPower);
-  _frontRightMotor->set(frontRightPower);
-  _backLeftMotor->set(backLeftPower);
-  _backRightMotor->set(backRightPower);
+  // apply jerk limits
+  frontLeftCurrentPower = applyJerkLimit(frontLeftCurrentPower, frontLeftDesiredPower);
+  frontRightCurrentPower = applyJerkLimit(frontRightCurrentPower, frontRightDesiredPower);
+  backLeftCurrentPower = applyJerkLimit(backLeftCurrentPower, backLeftDesiredPower);
+  backRightCurrentPower = applyJerkLimit(backRightCurrentPower, backRightDesiredPower);
+
+
+  _frontLeftMotor->set(frontLeftCurrentPower);
+  _frontRightMotor->set(frontRightCurrentPower);
+  _backLeftMotor->set(backLeftCurrentPower);
+  _backRightMotor->set(backRightCurrentPower);
 
   //return denominator;
   // debug
-  return frontLeftPower;
+  return frontLeftCurrentPower * 255.0;
 }
 
 double mecanumDrivetrain::toRadians(double degrees) {
   return degrees * (PI / 180.0);
+}
+
+double mecanumDrivetrain::applyJerkLimit(double current, double desired){
+  if(jerkLimit < abs(current - desired)){
+    if(current - desired < 0){
+      return current + jerkLimit;
+    }
+    else{
+      return current - jerkLimit;
+    }
+  }
+  else{
+    return desired;
+  }
 }

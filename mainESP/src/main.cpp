@@ -92,13 +92,18 @@ void loop() {
   double linearY = AlfredoConnect.getAxis(0, 1);
   double angularZ = -AlfredoConnect.getAxis(0, 2);
 
-  serialBT.println("LinearX: " + String(linearX) + " LinearY: " +String(linearY) + " AngularZ: " + String(angularZ));
+  //serialBT.println("LinearX: " + String(linearX) + " LinearY: " +String(linearY) + " AngularZ: " + String(angularZ));
 
   // only write to hardware if enabled
   if(enabled){
-    //serialBT.println("frontLeft" + String(drivetrain.set(linearX, linearY, angularZ)));
+    double debug = drivetrain.set(linearX, linearY, angularZ);
+
+    if(millis() - lastSent > 10){
+      lastSent = millis();
+      serialBT.println(debug);
+    }
     
-    drivetrain.set(linearX, linearY, angularZ);
+    //drivetrain.set(linearX, linearY, angularZ);
   }
 
   // drivetrain e-stop if disabled
@@ -112,8 +117,5 @@ void loop() {
   }
 
   // clear screen
-  serialBT.write(12);
-
-
 }
 
