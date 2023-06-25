@@ -48,7 +48,6 @@ void setup() {
   AlfredoConnect.begin(serialBT);
 
   // start RSL
-  RSL::initialize();
 
   // start IMU
   //imu.begin(5, 4);
@@ -58,7 +57,11 @@ void setup() {
   frontRightMotor.setInverted(true);
   backLeftMotor.setInverted(false);
   backRightMotor.setInverted(true);
+
+  // wait for DS comms
 }
+
+bool lastPacket = millis();
 
 bool firstWrite = true;
 void loop() {
@@ -66,23 +69,30 @@ void loop() {
   // update IMU
   //imu.read();
 
-  // RSL logic
-  if (enabled) {
-    RSL::setState(RSL_ENABLED);
-  }
-  else {
-    RSL::setState(RSL_DISABLED);
-  }
+  AlfredoConnect.update();
 
   // get values from driver station
   enabled = AlfredoConnect.buttonHeld(0, 4);
-  double linearX = AlfredoConnect.getRawAxis(0, 1);
-  double linearY = AlfredoConnect.getRawAxis(0, 0);
-  double angularZ = AlfredoConnect.getRawAxis(0, 3);
+  double linearX = -AlfredoConnect.getAxis(0, 0);
+  double linearY = AlfredoConnect.getAxis(0, 1);
+  double angularZ = AlfredoConnect.getAxis(0, 2);
+
+  /*if(abs(linearX) < 0.01){
+    linearX = 0;
+  }
+  if(abs(linearY) < 0.01){
+    linearY = 0;
+  }
+  if(abs(angularZ) < 0.01){
+    angularZ = 0;
+  }*/
+
+
+  // serialBT.println(String(linearX) + " " +String(linearY) + " " + String(angularZ));
 
   // only write to hardware if enabled
   if(enabled){
-    drivetrain.set(linearX, linearY, angularZ);
+    serialBT.println(drivetrain.set(linearX, linearY, angularZ));
   }
 
   // drivetrain e-stop if disabled

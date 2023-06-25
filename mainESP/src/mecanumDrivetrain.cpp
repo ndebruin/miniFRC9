@@ -19,10 +19,10 @@ void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, boo
   double rotY = linearX * sin(-botHeading) + linearY * cos(-botHeading);
 
   double denominator = max(abs(rotY) + abs(rotX) + abs(angularZ), 1.0);
-  frontLeftPower = ((rotY + rotX + angularZ) / denominator) * 255;
-  backLeftPower = ((rotY - rotX + angularZ) / denominator) * 255;
-  frontRightPower = ((rotY - rotX - angularZ) / denominator) * 255;
-  backRightPower = ((rotY + rotX - angularZ) / denominator) * 255;
+  frontLeftPower = ((rotY + rotX + angularZ) / denominator) * 255.0;
+  backLeftPower = ((rotY - rotX + angularZ) / denominator) * 255.0;
+  frontRightPower = ((rotY - rotX - angularZ) / denominator) * 255.0;
+  backRightPower = ((rotY + rotX - angularZ) / denominator) * 255.0;
 
   _frontLeftMotor->set(frontLeftPower);
   _frontRightMotor->set(frontRightPower);
@@ -30,19 +30,22 @@ void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, boo
   _backRightMotor->set(backRightPower);
 }
 
-void mecanumDrivetrain::set(double linearX, double linearY, double angularZ) {
-  double denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1.0);
-  frontLeftPower = ((linearY + linearX + angularZ) / denominator) * 255;
-  backLeftPower = ((linearY - linearX + angularZ) / denominator) * 255;
-  frontRightPower = ((linearY - linearX - angularZ) / denominator) * 255;
-  backRightPower = ((linearY + linearX - angularZ) / denominator) * 255;
+double mecanumDrivetrain::set(double linearX, double linearY, double angularZ) {
+  //double denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1.0);
+  frontLeftPower = ((linearY + linearX + angularZ));
+  backLeftPower = ((linearY - linearX + angularZ));
+  frontRightPower = ((linearY - linearX - angularZ));
+  backRightPower = ((linearY + linearX - angularZ));
 
   _frontLeftMotor->set(frontLeftPower);
   _frontRightMotor->set(frontRightPower);
   _backLeftMotor->set(backLeftPower);
   _backRightMotor->set(backRightPower);
+  //return denominator;
+
+  return frontLeftPower;
 }
 
 double mecanumDrivetrain::toRadians(double degrees) {
-  return degrees * (PI / 180);
+  return degrees * (PI / 180.0);
 }
