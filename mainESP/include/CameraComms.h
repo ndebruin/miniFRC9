@@ -2,21 +2,22 @@
 #define CAM_h
 
 #include <Arduino.h>
-#include <HardwareSerial.h>
+#include <Stream.h>
 
-class espCam
+class CamComms
 {
     public:
-        espCam(uint8_t txPin, uint8_t rxPin, uint8_t espPort);
-        void begin();
+        void begin(Stream* streamPtr);
+
+        uint8_t read();
+
         int getPixelOffset();
         void setFlash(bool on);
 
     private:
-        uint8_t _txPin;
-        uint8_t _rxPin;
+        int pixelOffset;
         
-        HardwareSerial SerialPort;
+        Stream* SerialPort;
 };
 
 #endif

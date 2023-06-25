@@ -1,5 +1,3 @@
-#include <Arduino.h>
-#include <Alfredo_NoU2.h>
 #include "mecanumDrivetrain.h"
 
 mecanumDrivetrain::mecanumDrivetrain(NoU_Motor* frontLeftMotor, NoU_Motor* frontRightMotor, NoU_Motor* backLeftMotor, NoU_Motor* backRightMotor) 

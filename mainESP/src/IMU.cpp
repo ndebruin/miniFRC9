@@ -1,10 +1,4 @@
-#include <Arduino.h>
-#include <ICM_20948.h>
-#include <Wire.h>
-
 #include "IMU.h"
-
-
 
 /*
   Initialize the IMU and DMP
@@ -14,14 +8,12 @@
   1 - Cannot communicate with IMU
   2 - DMP setup failed
 */
-uint8_t IMU::begin(uint8_t SDA, uint8_t SCL)
+uint8_t IMU::begin(TwoWire &wire)
 {
-  // start i2c interface
-  wire.begin(SDA, SCL);
-  wire.setClock(400000);
+  _wire = wire;
 
   // start imu object comms
-  imuObj.begin(wire, AD0_VAL);
+  imuObj.begin(_wire, AD0_VAL);
 
   // check if we havent started talking
   // retry three times

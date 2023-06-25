@@ -1,5 +1,3 @@
-#include <Arduino.h>
-#include <Alfredo_NoU2.h>
 #include "Arm.h"
 
 Arm::Arm(NoU_Servo* fourbarJoint, NoU_Servo* secondJoint) 

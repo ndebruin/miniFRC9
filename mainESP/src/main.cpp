@@ -2,18 +2,27 @@
 #include <BluetoothSerial.h>
 #include <AlfredoConnect.h>
 #include <Alfredo_NoU2.h>
+#include <HardwareSerial.h>
+#include <AS5600.h>
 
 #include "IMU.h"
 #include "mecanumDrivetrain.h"
+#include "Arm.h"
+#include "EncoderComms.h"
+#include "CameraComms.h"
 
 // define bluetooth serial connection
 
 BluetoothSerial serialBT;
 String robotName = "roboeaglets";
 
-// define serial to other micros
-// espCam camera;
-// auxIO io;
+// define serial to ESP32-Cam
+HardwareSerial cameraPort(0);
+CamComms camera;
+
+// define serial to Encoder read
+HardwareSerial encoderPort(1);
+EncoderComms encoder;
 
 // define motors
 NoU_Motor frontLeftMotor(2);
@@ -30,14 +39,16 @@ NoU_Servo intakeServo(1);
 NoU_Servo fourBarServo(2);
 NoU_Servo secondJointServo(3);
 
+// define arm
+Arm arm = Arm(&fourBarServo, &secondJointServo);
+
 // define imu and magnetic encoder objects
+TwoWire wire;
 IMU imu;
+AS5600 turretEncoder(&wire);
 
-// read from sensors
-bool sensorRead = false;
 
-unsigned long lastSent = millis();
-
+// enable logic and debounce
 bool enabled = false;
 unsigned long lastEnableRead = millis();
 
@@ -50,25 +61,43 @@ void setup() {
   // start RSL
   RSL::initialize();
 
-  // start IMU
-  //imu.begin(5, 4);
+  // start I2C
+  wire.begin(5, 4);
+  wire.setClock(400000);
+
+  // start imu
+  imu.begin(wire);
+
+  // start magnetic encoder
+  turretEncoder.begin();
+
+  // start comms to camera
+  cameraPort.begin(9600,SERIAL_8N1,3,1);
+  camera.begin(&cameraPort);
+
+
+  // start comms to encoders
+  encoderPort.begin(9600,SERIAL_8N1,35,-1);
+  encoder.begin(&encoderPort);
+
 
   // set direction of motors
   frontLeftMotor.setInverted(false);
   frontRightMotor.setInverted(true);
   backLeftMotor.setInverted(false);
-  backRightMotor.setInverted(true);
-
-  
+  backRightMotor.setInverted(true);  
 }
 
-bool lastPacket = millis();
-
-bool firstWrite = true;
 void loop() {
 
-  // update IMU
+  // parse updates from IMU
   //imu.read();
+
+  // parse updates from camera
+  camera.read();
+
+  // parse updates from encoders
+  encoder.read();
 
   AlfredoConnect.update();
 
@@ -95,31 +124,16 @@ void loop() {
   //serialBT.println("LinearX: " + String(linearX) + " LinearY: " +String(linearY) + " AngularZ: " + String(angularZ));
 
   // only write to hardware if enabled
-  if(enabled){
-    double debug = drivetrain.set(linearX, linearY, angularZ);
-
-    if(millis() - lastSent > 10){
-      lastSent = millis();
-      //serialBT.println(debug);
-      
-    }
-    if(drivetrain.limiting){
-        serialBT.println("SLOWING DOWN");
-      }
-    
-    //drivetrain.set(linearX, linearY, angularZ);
+  if(enabled){    
+    drivetrain.set(linearX, linearY, angularZ);
   }
 
   // drivetrain e-stop if disabled
   if(!enabled){
-
-    drivetrain.set(0.0, 0.0, 0.0);
     frontLeftMotor.set(0.0);
     frontRightMotor.set(0.0);
     backLeftMotor.set(0.0);
     backRightMotor.set(0.0);
   }
-
-  // clear screen
 }
 
