@@ -1,39 +1,43 @@
 #include <Arduino.h>
 #include <Alfredo_NoU2.h>
-#include "arm.h"
+#include "Arm.h"
 
-arm::arm(NoU_Servo* fourbar_joint, NoU_Servo* second_joint) 
-                                    : _fourbar_joint(fourbar_joint), _second_joint(second_joint)
+Arm::Arm(NoU_Servo* fourbarJoint, NoU_Servo* secondJoint) 
+                                    : _fourBarJoint(fourbarJoint), _secondJoint(secondJoint)
 { }
 
-void arm::begin(){
-  _fourbar_joint->write(0);
-  _second_joint->write(0);
+void Arm::begin(){
+  _fourBarJoint->write(0);
+  _secondJoint->write(0);
 }
 
-void arm::set(String preset) {
-    if (preset.equals("LOW")) {
-        _fourbar_joint->write(_fourbar_angle_low);
-        _second_joint->write(_second_angle_low);
-    }
-    else if (preset.equals("MID")) {
-        _fourbar_joint->write(_fourbar_angle_mid);
-        _second_joint->write(_second_angle_mid);
-    }
-    else if (preset.equals("HIGH")) {
-        _fourbar_joint->write(_fourbar_angle_high);
-        _second_joint->write(_second_angle_high);
-    }
-    else if (preset.equals("LOAD")) {
-        _fourbar_joint->write(_fourbar_angle_load);
-        _second_joint->write(_second_angle_load);
-    }
-    else if (preset.equals("FLOOR")) {
-        _fourbar_joint->write(_fourbar_angle_floor);
-        _second_joint->write(_second_angle_floor);
-    }
-    else if (preset.equals("STOW")) {
-        _fourbar_joint->write(0);
-        _second_joint->write(0);
+void Arm::set(int fourBarAngle, int secondAngle){
+    _fourBarJoint->write(fourBarAngle);
+    _secondJoint->write(secondAngle);
+}
+
+void Arm::set(char preset) {
+    switch (preset){
+        case 'L':
+            set(_angleFourBarLow, _angleSecondLow);
+            break;
+        case 'M':
+            set(_angleFourBarMid, _angleSecondMid);
+            break;
+        case 'H':
+            set(_angleFourBarHigh, _angleSecondHigh);
+            break;
+        case 'F':
+            set(_angleFourBarFloor, _angleSecondFloor);
+            break;
+        case 'D':
+            set(_angleFourBarDouble, _angleSecondDouble);
+            break;
+        case 'S':
+            set(_angleFourBarSingle, _angleSecondSingle);
+            break;
+        default:
+            set(0,0);
+            break;
     }
 }

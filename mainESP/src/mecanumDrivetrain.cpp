@@ -31,18 +31,25 @@ void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, boo
 }
 
 double mecanumDrivetrain::set(double linearX, double linearY, double angularZ) {
-  //double denominator = max(abs(linearY) + abs(linearX) + abs(angularZ), 1.0);
+  double maxMagnitude = max(fabs(frontLeftPower), max(fabs(frontRightPower), max(fabs(backLeftPower), fabs(backRightPower))));
   frontLeftPower = ((linearY + linearX + angularZ));
   backLeftPower = ((linearY - linearX + angularZ));
   frontRightPower = ((linearY - linearX - angularZ));
   backRightPower = ((linearY + linearX - angularZ));
+  if(maxMagnitude > 1.0){
+    frontLeftPower /= maxMagnitude;
+    frontRightPower /= maxMagnitude;
+    backLeftPower /= maxMagnitude;
+    backRightPower /= maxMagnitude;    
+  }
 
   _frontLeftMotor->set(frontLeftPower);
   _frontRightMotor->set(frontRightPower);
   _backLeftMotor->set(backLeftPower);
   _backRightMotor->set(backRightPower);
-  //return denominator;
 
+  //return denominator;
+  // debug
   return frontLeftPower;
 }
 

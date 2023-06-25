@@ -1,30 +1,39 @@
-#ifndef Arm_h
-#define Arm_h
+#ifndef ArmH
+#define ArmH
 
 #include <Arduino.h>
 #include <Alfredo_NoU2.h>
 
-class arm
+class Arm
 {
     public:
-        arm(NoU_Servo* fourbar_joint, NoU_Servo* second_joint);
+        Arm(NoU_Servo* fourBarJoint, NoU_Servo* secondJoint);
         void begin();
 
-        void set(int fourbar_angle, int second_angle);
+        void set(int fourBarAngle, int secondAngle);
+        void set(char preset);
 
     private:
-        NoU_Servo* _fourbar_joint;
-        NoU_Servo* _second_joint;
+        NoU_Servo* _fourBarJoint;
+        NoU_Servo* _secondJoint;
 
-        int _fourbar_angle_low = 0;
-        int _fourbar_angle_mid = 0;
-        int _fourbar_angle_high = 0;
-        int _fourbar_angle_load = 0;
-        int _fourbar_angle_floor = 0;
+        int _angleFourBarLow = 0;
+        int _angleSecondLow = 0;
 
-        int _second_angle_low = 0;
-        int _second_angle_mid = 0;
-        int _second_angle_high = 0;
-        int _second_angle_load = 0; 
-        int _second_angle_floor = 0;
+        int _angleFourBarMid = 0;
+        int _angleSecondMid = 0;
+
+        int _angleFourBarHigh = 0;
+        int _angleSecondHigh = 0;
+
+        int _angleFourBarDouble = 0;
+        int _angleSecondDouble = 0; 
+
+        int _angleFourBarSingle = 0;
+        int _angleSecondSingle = 0; 
+
+        int _angleFourBarFloor = 0;     
+        int _angleSecondFloor = 0;
 };
+
+#endif
