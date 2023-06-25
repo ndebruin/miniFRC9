@@ -14,6 +14,8 @@ class mecanumDrivetrain
 
         void set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw);
 
+        bool limiting;
+
     private:
         NoU_Motor* _frontLeftMotor;
         NoU_Motor* _frontRightMotor;
@@ -32,7 +34,7 @@ class mecanumDrivetrain
 
         // jerk limit!! in terms of change in -1 - 1 domain
 
-        double jerkLimit = 0.1;
+        double jerkLimit = 0.009;
 
 
         double toRadians(double degrees);

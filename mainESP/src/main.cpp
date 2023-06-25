@@ -100,8 +100,12 @@ void loop() {
 
     if(millis() - lastSent > 10){
       lastSent = millis();
-      serialBT.println(debug);
+      //serialBT.println(debug);
+      
     }
+    if(drivetrain.limiting){
+        serialBT.println("SLOWING DOWN");
+      }
     
     //drivetrain.set(linearX, linearY, angularZ);
   }

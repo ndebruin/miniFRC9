@@ -70,6 +70,7 @@ double mecanumDrivetrain::toRadians(double degrees) {
 
 double mecanumDrivetrain::applyJerkLimit(double current, double desired){
   if(jerkLimit < abs(current - desired)){
+    limiting = true;
     if(current - desired < 0){
       return current + jerkLimit;
     }
@@ -78,6 +79,7 @@ double mecanumDrivetrain::applyJerkLimit(double current, double desired){
     }
   }
   else{
+    limiting = false;
     return desired;
   }
 }
