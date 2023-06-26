@@ -15,6 +15,11 @@
 double deadzone(double rawJoy);
 double deadzoneVal = 0.05;
 
+// LED defs
+#define NUM_LEDS 16
+#define DATA_PIN 2
+
+CRGB leds[NUM_LEDS];
 
 // define bluetooth serial connection
 BluetoothSerial serialBT;
@@ -52,7 +57,6 @@ unsigned long lastEnableRead = millis();
 char armPreset = '0';
 
 void setup() {
-
   // begin DS comms
   serialBT.begin(robotName);
   AlfredoConnect.begin(serialBT);
@@ -67,19 +71,26 @@ void setup() {
   // start imu
   imu.begin(Wire1);
 
-
   // start arm
   arm.begin();
-
 
   // set direction of motors
   frontLeftMotor.setInverted(false);
   frontRightMotor.setInverted(true);
   backLeftMotor.setInverted(true);
   backRightMotor.setInverted(false);
+
+  // start LEDS
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  // reset leds to black
+  FastLED.clear(true);
+  // limit brightness
+  FastLED.setBrightness(100);
+
 }
 
 void loop() {
+  fill_solid(leds, NUM_LEDS, CRGB::Green);
 
   // parse updates from IMU
   imu.read();
