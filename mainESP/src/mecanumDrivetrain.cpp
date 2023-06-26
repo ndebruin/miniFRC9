@@ -12,21 +12,24 @@ void mecanumDrivetrain::begin(){
 }
 
 void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw) {
+  double linX = linearX;
+  double linY = linearY;
+  double angZ = angularZ;
   if (this->flipped) {
-    linearX = angularZ;
-    linearY = linearX;
-    angularZ = linearY;
+    linX = angularZ;
+    linY = linearX;
+    angZ = linearY;
   }
 
   double botHeading = yaw;
-  double rotX = linearX * cos(-botHeading) - linearY * sin(-botHeading);
-  double rotY = linearX * sin(-botHeading) + linearY * cos(-botHeading);
+  double rotX = linX * cos(-botHeading) - linY * sin(-botHeading);
+  double rotY = linX * sin(-botHeading) + linY * cos(-botHeading);
 
-  double denominator = max(abs(rotY) + abs(rotX) + abs(angularZ), 1.0);
-  frontLeftDesiredPower = (rotY + rotX + angularZ);
-  backLeftDesiredPower = (rotY - rotX + angularZ);
-  frontRightDesiredPower = (rotY - rotX - angularZ);
-  backRightDesiredPower = (rotY + rotX - angularZ);
+  double denominator = max(abs(rotY) + abs(rotX) + abs(angZ), 1.0);
+  frontLeftDesiredPower = (rotY + rotX + angZ);
+  backLeftDesiredPower = (rotY - rotX + angZ);
+  frontRightDesiredPower = (rotY - rotX - angZ);
+  backRightDesiredPower = (rotY + rotX - angZ);
 
   double maxMagnitude = max(fabs(frontLeftDesiredPower), max(fabs(frontRightDesiredPower), max(fabs(backLeftDesiredPower), fabs(backRightDesiredPower))));
   if(maxMagnitude > 1.0){
@@ -48,10 +51,19 @@ void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, boo
 }
 
 void mecanumDrivetrain::set(double linearX, double linearY, double angularZ) {
-  frontLeftDesiredPower = ((linearX + linearY + angularZ));
-  backLeftDesiredPower = ((linearX - linearY + angularZ));
-  frontRightDesiredPower = ((linearX - linearY - angularZ));
-  backRightDesiredPower = ((linearX + linearY - angularZ));
+  double linX = linearX;
+  double linY = linearY;
+  double angZ = angularZ;
+  if (this->flipped) {
+    linX = angularZ;
+    linY = linearX;
+    angZ = linearY;
+  }
+
+  frontLeftDesiredPower = ((linX - linY - angZ));
+  backLeftDesiredPower = ((linX + linY + angZ));
+  frontRightDesiredPower = ((linX + linY - angZ));
+  backRightDesiredPower = ((linX - linY + angZ));
 
   // ensure motor output is never greater than -1/1
   double maxMagnitude = max(fabs(frontLeftDesiredPower), max(fabs(frontRightDesiredPower), max(fabs(backLeftDesiredPower), fabs(backRightDesiredPower))));
@@ -92,6 +104,6 @@ double mecanumDrivetrain::applyJerkLimit(double current, double desired){
   }
 }
 
-void setFlipped(bool flipped){
-  this->flipped = flipped;
+void mecanumDrivetrain::setFlipped(bool _flipped){
+  flipped = _flipped;
 }

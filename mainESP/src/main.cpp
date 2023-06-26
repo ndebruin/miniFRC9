@@ -2,8 +2,9 @@
 #include <BluetoothSerial.h>
 #include <AlfredoConnect.h>
 #include <Alfredo_NoU2.h>
-#include <FastLED.h>
-#include <Encoder.h>
+//#include <FastLED.h>
+//#include <Encoder.h>
+
 
 #include "IMU.h"
 #include "mecanumDrivetrain.h"
@@ -14,29 +15,32 @@
 // function def
 double deadzone(double rawJoy);
 double deadzoneVal = 0.05;
+void findTicksPerRev();
+void taxiAuton();
+void driveInches(double inches, double linearX, double linearY, double angularZ);
 
 // LED defs
-#define NUM_LEDS 16
-#define DATA_PIN 2
+//#define NUM_LEDS 16
+//#define DATA_PIN 2
 
-CRGB leds[NUM_LEDS];
+//CRGB leds[NUM_LEDS];
 
 // define bluetooth serial connection
 BluetoothSerial serialBT;
 String robotName = "roboeaglets";
 
 // define motors
-NoU_Motor frontLeftMotor(1);
+NoU_Motor frontLeftMotor(3);
 NoU_Motor frontRightMotor(2);
-NoU_Motor backLeftMotor(3);
-NoU_Motor backRightMotor(4);
+NoU_Motor backLeftMotor(4);
+NoU_Motor backRightMotor(1);
 
 // define drivetrain
 mecanumDrivetrain drivetrain = mecanumDrivetrain(&frontLeftMotor, &frontRightMotor, &backLeftMotor, &backRightMotor);
 
 // define encoders
-Encoder frontLeftEncoder(1, 3);
-Encoder frontRightEncoder(21, 22);
+//Encoder frontLeftEncoder(1, 3);
+//Encoder frontRightEncoder(21, 22);
 
 // define servos
 NoU_Servo intakeServo(1);
@@ -49,9 +53,11 @@ Arm arm = Arm(&fourBarServo, &secondJointServo);
 // define imu object
 IMU imu;
 
+
+
 // enable logic and debounce
 bool enabled = false;
-unsigned long lastEnableRead = millis();
+unsigned long lastEnableRead = 0;
 bool armEnabled = false;
 bool runAuton = false;
 
@@ -63,9 +69,6 @@ void setup() {
   serialBT.begin(robotName);
   AlfredoConnect.begin(serialBT);
 
-  // start RSL
-  RSL::initialize();
-
   // start I2C
   Wire1.begin(5, 4);
   Wire1.setClock(400000);
@@ -76,26 +79,18 @@ void setup() {
   // start arm
   arm.begin();
 
+  RSL::initialize();
+
   // set direction of motors
   frontLeftMotor.setInverted(false);
-  frontRightMotor.setInverted(true);
+  frontRightMotor.setInverted(false);
   backLeftMotor.setInverted(true);
-  backRightMotor.setInverted(false);
+  backRightMotor.setInverted(true);
 
-  //flip drivetrain
-  drivetrain.setFlipped(true);
-
-  // start LEDS
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-  // reset leds to black
-  FastLED.clear(true);
-  // limit brightness
-  FastLED.setBrightness(100);
 }
 
 void loop() {
-  // fill_solid(leds, NUM_LEDS, CRGB::Green);
-  fill_rainbow_circular(leds, NUM_LEDS, 0);
+  //fill_solid(leds, NUM_LEDS, CRGB::Green);
 
   // parse updates from IMU
   imu.read();
@@ -109,20 +104,17 @@ void loop() {
     enabled = !enabled;
   }
 
-  // rsl logic
   if(enabled){
     RSL::setState(RSL_ENABLED);
   }
   else{
     RSL::setState(RSL_DISABLED);
   }
-  RSL::update();
-
 
   // get values from controller for drivetrain
   double linearX = -AlfredoConnect.getAxis(0, 0); // angularZ
   double linearY = AlfredoConnect.getAxis(0, 1); // linearX
-  double angularZ = -AlfredoConnect.getAxis(0, 2); // linearY
+  double angularZ = AlfredoConnect.getAxis(0, 2); // linearY
 
   // apply deadzone
   linearX = deadzone(linearX);
@@ -162,25 +154,23 @@ void loop() {
     armPreset = 'F'; // floor
     armEnabled = true;
   }
-  if(AlfredoConnect.keyHeld(Key::A)) {
-    runAuton = true;
-  }
+
+  
 
   // only write to hardware if enabled
   if(enabled) {
-    if (runAuton) {
+    /*if (runAuton) {
       //auton
       runAuton = false;
       findTicksPerRev();
-    }
-    else {
+    }*/
+    
       //teleop
       drivetrain.set(linearX, linearY, angularZ);
       if (armEnabled) {
         arm.set(armPreset);
         armEnabled = false;
       }
-    }
   }
   else {
     // drivetrain e-stop if disabled
@@ -201,7 +191,7 @@ double deadzone(double rawJoy){
 }
 
 // autons
-void driveInches(double inches, double linearX, double linearY, double angularZ) {
+/*void driveInches(double inches, double linearX, double linearY, double angularZ) {
   double inperrev = 5.93689;
   double requiredrot = inches / inperrev;
 
@@ -232,4 +222,4 @@ void findTicksPerRev() {
   }
   drivetrain.set(0.0, 0.0, 0.0);
   Serial.println("Final Left: " + String(leftRot) + " Final Right: " + String(rightRot));
-}
+}*/
