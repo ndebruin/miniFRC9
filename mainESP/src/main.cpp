@@ -52,6 +52,8 @@ IMU imu;
 // enable logic and debounce
 bool enabled = false;
 unsigned long lastEnableRead = millis();
+bool armEnabled = false;
+bool runAuton = false;
 
 // current arm preset
 char armPreset = '0';
@@ -80,17 +82,20 @@ void setup() {
   backLeftMotor.setInverted(true);
   backRightMotor.setInverted(false);
 
+  //flip drivetrain
+  drivetrain.setFlipped(true);
+
   // start LEDS
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   // reset leds to black
   FastLED.clear(true);
   // limit brightness
   FastLED.setBrightness(100);
-
 }
 
 void loop() {
-  fill_solid(leds, NUM_LEDS, CRGB::Green);
+  // fill_solid(leds, NUM_LEDS, CRGB::Green);
+  fill_rainbow_circular(leds, NUM_LEDS, 0);
 
   // parse updates from IMU
   imu.read();
@@ -115,9 +120,9 @@ void loop() {
 
 
   // get values from controller for drivetrain
-  double angularZ = -AlfredoConnect.getAxis(0, 0);
-  double linearX = AlfredoConnect.getAxis(0, 1);
-  double linearY = -AlfredoConnect.getAxis(0, 2);
+  double linearX = -AlfredoConnect.getAxis(0, 0); // angularZ
+  double linearY = AlfredoConnect.getAxis(0, 1); // linearX
+  double angularZ = -AlfredoConnect.getAxis(0, 2); // linearY
 
   // apply deadzone
   linearX = deadzone(linearX);
@@ -135,27 +140,47 @@ void loop() {
   // get arm preset positions from controller
   if(AlfredoConnect.buttonHeld(0, 7)){ // right bumper
     armPreset = 'H'; // high node
+    armEnabled = true;
   }
   if(AlfredoConnect.buttonHeld(0, 6)){ // left bumper
     armPreset = 'D'; // double substation
+    armEnabled = true;
   }
   if(AlfredoConnect.buttonHeld(0, 12)) { // dpad up
     armPreset = 'M'; // mid node
+    armEnabled = true;
   }
   if(AlfredoConnect.buttonHeld(0, 15)) { // dpad right
     armPreset = 'L'; // low node
+    armEnabled = true;
   }
   if(AlfredoConnect.buttonHeld(0, 13)) { // dpad down
     armPreset = '0'; // stow
+    armEnabled = true;
   }
   if(AlfredoConnect.buttonHeld(0, 14)) { // dpad left
     armPreset = 'F'; // floor
+    armEnabled = true;
+  }
+  if(AlfredoConnect.keyHeld(Key::A)) {
+    runAuton = true;
   }
 
   // only write to hardware if enabled
-  if(enabled){    
-    drivetrain.set(linearX, linearY, angularZ);
-    arm.set(armPreset);
+  if(enabled) {
+    if (runAuton) {
+      //auton
+      runAuton = false;
+      findTicksPerRev();
+    }
+    else {
+      //teleop
+      drivetrain.set(linearX, linearY, angularZ);
+      if (armEnabled) {
+        arm.set(armPreset);
+        armEnabled = false;
+      }
+    }
   }
   else {
     // drivetrain e-stop if disabled
@@ -180,13 +205,13 @@ void driveInches(double inches, double linearX, double linearY, double angularZ)
   double inperrev = 5.93689;
   double requiredrot = inches / inperrev;
 
-  double frontLeftRot = frontLeftEncoder.read();
-  double frontRightRot = frontRightEncoder.read();
+  double leftRot = frontLeftEncoder.read();
+  double rightRot = frontRightEncoder.read();
 
-  double frontLeftTarget = frontLeftRot + requiredrot;
-  double frontRightTarget = frontRightRot + requiredrot;
+  double leftTarget = leftRot + requiredrot;
+  double rightTarget = rightRot + requiredrot;
 
-  while (frontLeftRot != frontLeftTarget || frontRightRot != frontRightTarget) {
+  while (leftRot != leftTarget || rightRot != rightRot) {
     drivetrain.set(linearX, linearY, angularZ);
   }
   drivetrain.set(0, 0, 0);
@@ -194,4 +219,17 @@ void driveInches(double inches, double linearX, double linearY, double angularZ)
 
 void taxiAuton() {
   driveInches(35.0, 0.0, 0.6, 0.0);
+}
+
+void findTicksPerRev() {
+  double leftRot = 0;
+  double rightRot = 0;
+  while (AlfredoConnect.keyHeld(Key::T)) {
+    drivetrain.set(0.0, 0.15, 0.0);
+    leftRot = frontLeftEncoder.read();
+    rightRot = frontRightEncoder.read();
+    Serial.println("Left: " + String(leftRot) + " Right: " + String(rightRot));
+  }
+  drivetrain.set(0.0, 0.0, 0.0);
+  Serial.println("Final Left: " + String(leftRot) + " Final Right: " + String(rightRot));
 }

@@ -14,6 +14,8 @@ class mecanumDrivetrain
 
         void set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw);
 
+        void setFlipped(bool flipped);
+
     private:
         NoU_Motor* _frontLeftMotor;
         NoU_Motor* _frontRightMotor;
@@ -38,6 +40,8 @@ class mecanumDrivetrain
         double toRadians(double degrees);
 
         double applyJerkLimit(double current, double desired);
+
+        bool flipped = false;
 };
 
 #endif

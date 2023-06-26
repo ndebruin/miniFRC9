@@ -12,6 +12,12 @@ void mecanumDrivetrain::begin(){
 }
 
 void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw) {
+  if (this->flipped) {
+    linearX = angularZ;
+    linearY = linearX;
+    angularZ = linearY;
+  }
+
   double botHeading = yaw;
   double rotX = linearX * cos(-botHeading) - linearY * sin(-botHeading);
   double rotY = linearX * sin(-botHeading) + linearY * cos(-botHeading);
@@ -84,4 +90,8 @@ double mecanumDrivetrain::applyJerkLimit(double current, double desired){
   else{
     return desired;
   }
+}
+
+void setFlipped(bool flipped){
+  this->flipped = flipped;
 }
