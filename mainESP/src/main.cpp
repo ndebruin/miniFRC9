@@ -61,6 +61,10 @@ unsigned long lastEnableRead = 0;
 bool armEnabled = false;
 bool runAuton = false;
 
+bool intakeClosed = false;
+unsigned long lastIntakeRead = 0;
+bool firstIntake;
+
 // current arm preset
 char armPreset = '0';
 
@@ -155,6 +159,13 @@ void loop() {
     armEnabled = true;
   }
 
+  // intake
+  if(AlfredoConnect.buttonHeld(0, 0) && millis() - lastIntakeRead > 250){
+    lastIntakeRead = millis();
+    intakeClosed = !intakeClosed;
+    firstIntake = true;
+  }
+
   
 
   // only write to hardware if enabled
@@ -170,6 +181,14 @@ void loop() {
       if (armEnabled) {
         arm.set(armPreset);
         armEnabled = false;
+      }
+      if(intakeClosed && firstIntake){
+        firstIntake = false;
+        intakeServo.write(30);
+      }
+      if(!intakeClosed && firstIntake){
+        firstIntake = false;
+        intakeServo.write(0);
       }
   }
   else {
