@@ -24,7 +24,7 @@ class EncoderComms
         long backLeftCount;
         long backRightCount;
 
-        int ticksPerRev = 1024;
+        int ticksPerRev = 20;
 };
 
 #endif

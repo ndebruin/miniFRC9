@@ -2,55 +2,54 @@
 #include <BluetoothSerial.h>
 #include <AlfredoConnect.h>
 #include <Alfredo_NoU2.h>
-#include <HardwareSerial.h>
-#include <AS5600.h>
+#include <FastLED.h>
+#include <Encoder.h>
 
 #include "IMU.h"
 #include "mecanumDrivetrain.h"
 #include "Arm.h"
-#include "EncoderComms.h"
-#include "CameraComms.h"
+// #include "EncoderComms.h"
+// #include "CameraComms.h"
+
+// function def
+double deadzone(double rawJoy);
+double deadzoneVal = 0.05;
+
 
 // define bluetooth serial connection
-
 BluetoothSerial serialBT;
 String robotName = "roboeaglets";
 
-// define serial to ESP32-Cam
-HardwareSerial cameraPort(0);
-CamComms camera;
-
-// define serial to Encoder read
-HardwareSerial encoderPort(1);
-EncoderComms encoder;
-
 // define motors
-NoU_Motor frontLeftMotor(2);
-NoU_Motor frontRightMotor(1);
-NoU_Motor backLeftMotor(4);
-NoU_Motor backRightMotor(3);
-NoU_Motor turretMotor(5);
+NoU_Motor frontLeftMotor(1);
+NoU_Motor frontRightMotor(2);
+NoU_Motor backLeftMotor(3);
+NoU_Motor backRightMotor(4);
 
 // define drivetrain
 mecanumDrivetrain drivetrain = mecanumDrivetrain(&frontLeftMotor, &frontRightMotor, &backLeftMotor, &backRightMotor);
 
+// define encoders
+Encoder frontLeftEncoder(1, 3);
+Encoder frontRightEncoder(21, 22);
+
 // define servos
 NoU_Servo intakeServo(1);
-NoU_Servo fourBarServo(2);
-NoU_Servo secondJointServo(3);
+NoU_Servo fourBarServo(3);
+NoU_Servo secondJointServo(4);
 
 // define arm
 Arm arm = Arm(&fourBarServo, &secondJointServo);
 
-// define imu and magnetic encoder objects
-TwoWire wire;
+// define imu object
 IMU imu;
-AS5600 turretEncoder(&wire);
-
 
 // enable logic and debounce
 bool enabled = false;
 unsigned long lastEnableRead = millis();
+
+// current arm preset
+char armPreset = '0';
 
 void setup() {
 
@@ -62,51 +61,39 @@ void setup() {
   RSL::initialize();
 
   // start I2C
-  wire.begin(5, 4);
-  wire.setClock(400000);
+  Wire1.begin(5, 4);
+  Wire1.setClock(400000);
 
   // start imu
-  imu.begin(wire);
-
-  // start magnetic encoder
-  turretEncoder.begin();
-
-  // start comms to camera
-  cameraPort.begin(9600,SERIAL_8N1,3,1);
-  camera.begin(&cameraPort);
+  imu.begin(Wire1);
 
 
-  // start comms to encoders
-  encoderPort.begin(9600,SERIAL_8N1,35,-1);
-  encoder.begin(&encoderPort);
+  // start arm
+  arm.begin();
 
 
   // set direction of motors
   frontLeftMotor.setInverted(false);
   frontRightMotor.setInverted(true);
-  backLeftMotor.setInverted(false);
-  backRightMotor.setInverted(true);  
+  backLeftMotor.setInverted(true);
+  backRightMotor.setInverted(false);
 }
 
 void loop() {
 
   // parse updates from IMU
-  //imu.read();
+  imu.read();
 
-  // parse updates from camera
-  camera.read();
-
-  // parse updates from encoders
-  encoder.read();
-
+  // parse updates from driver station
   AlfredoConnect.update();
 
-  // get values from driver station
+  // enable logic
   if(AlfredoConnect.buttonHeld(0, 9) && millis() - lastEnableRead > 300){
     lastEnableRead = millis();
     enabled = !enabled;
   }
 
+  // rsl logic
   if(enabled){
     RSL::setState(RSL_ENABLED);
   }
@@ -116,20 +103,51 @@ void loop() {
   RSL::update();
 
 
-  //enabled = true;
-  double linearX = -AlfredoConnect.getAxis(0, 0);
-  double linearY = AlfredoConnect.getAxis(0, 1);
-  double angularZ = -AlfredoConnect.getAxis(0, 2);
+  // get values from controller for drivetrain
+  double angularZ = -AlfredoConnect.getAxis(0, 0);
+  double linearX = AlfredoConnect.getAxis(0, 1);
+  double linearY = -AlfredoConnect.getAxis(0, 2);
 
-  //serialBT.println("LinearX: " + String(linearX) + " LinearY: " +String(linearY) + " AngularZ: " + String(angularZ));
+  // apply deadzone
+  linearX = deadzone(linearX);
+  linearY = deadzone(linearY);
+  angularZ = deadzone(angularZ);
+  
+  // apply straightening
+  if(fabs(linearX) > 0.95 && fabs(linearY) < 0.3){
+    linearY = 0.0;
+  }
+  if(fabs(linearY) > 0.95 && fabs(linearX) < 0.3){
+    linearX = 0.0;
+  }
+
+  // get arm preset positions from controller
+  if(AlfredoConnect.buttonHeld(0, 7)){ // right bumper
+    armPreset = 'H'; // high node
+  }
+  if(AlfredoConnect.buttonHeld(0, 6)){ // left bumper
+    armPreset = 'D'; // double substation
+  }
+  if(AlfredoConnect.buttonHeld(0, 12)) { // dpad up
+    armPreset = 'M'; // mid node
+  }
+  if(AlfredoConnect.buttonHeld(0, 15)) { // dpad right
+    armPreset = 'L'; // low node
+  }
+  if(AlfredoConnect.buttonHeld(0, 13)) { // dpad down
+    armPreset = '0'; // stow
+  }
+  if(AlfredoConnect.buttonHeld(0, 14)) { // dpad left
+    armPreset = 'F'; // floor
+  }
 
   // only write to hardware if enabled
   if(enabled){    
     drivetrain.set(linearX, linearY, angularZ);
+    arm.set(armPreset);
   }
-
-  // drivetrain e-stop if disabled
-  if(!enabled){
+  else {
+    // drivetrain e-stop if disabled
     frontLeftMotor.set(0.0);
     frontRightMotor.set(0.0);
     backLeftMotor.set(0.0);
@@ -137,3 +155,32 @@ void loop() {
   }
 }
 
+
+// joystick deadzone
+double deadzone(double rawJoy){
+  if(fabs(rawJoy) < deadzoneVal){
+    return 0.0;
+  }
+  return rawJoy;
+}
+
+// autons
+void driveInches(double inches, double linearX, double linearY, double angularZ) {
+  double inperrev = 5.93689;
+  double requiredrot = inches / inperrev;
+
+  double frontLeftRot = frontLeftEncoder.read();
+  double frontRightRot = frontRightEncoder.read();
+
+  double frontLeftTarget = frontLeftRot + requiredrot;
+  double frontRightTarget = frontRightRot + requiredrot;
+
+  while (frontLeftRot != frontLeftTarget || frontRightRot != frontRightTarget) {
+    drivetrain.set(linearX, linearY, angularZ);
+  }
+  drivetrain.set(0, 0, 0);
+}
+
+void taxiAuton() {
+  driveInches(35.0, 0.0, 0.6, 0.0);
+}

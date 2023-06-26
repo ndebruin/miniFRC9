@@ -18,7 +18,7 @@ uint8_t EncoderComms::read(){
 
 }
 
-long EncoderComms::getFrontLeft(){return frontLeftCount/ticksPerRev;}
-long EncoderComms::getFrontRight(){return frontRightCount/ticksPerRev;}
-long EncoderComms::getBackLeft(){return backLeftCount/ticksPerRev;}
-long EncoderComms::getBackRight(){return backRightCount/ticksPerRev;}
+long EncoderComms::getFrontLeft(){return frontLeftCount;}
+long EncoderComms::getFrontRight(){return frontRightCount;}
+long EncoderComms::getBackLeft(){return backLeftCount;}
+long EncoderComms::getBackRight(){return backRightCount;}

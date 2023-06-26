@@ -18,7 +18,6 @@ class IMU
         int8_t read();
 
     private:
-        TwoWire _wire;
         ICM_20948_I2C imuObj;
         double pitch;
         double roll;

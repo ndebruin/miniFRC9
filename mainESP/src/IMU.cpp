@@ -10,10 +10,8 @@
 */
 uint8_t IMU::begin(TwoWire &wire)
 {
-  _wire = wire;
-
   // start imu object comms
-  imuObj.begin(_wire, AD0_VAL);
+  imuObj.begin(wire, AD0_VAL);
 
   // check if we havent started talking
   // retry three times

@@ -10,11 +10,9 @@ class mecanumDrivetrain
         mecanumDrivetrain(NoU_Motor* frontLeftMotor, NoU_Motor* frontRightMotor, NoU_Motor* backLeftMotor, NoU_Motor* backRightMotor);
         void begin();
         
-        double set(double linearX, double linearY, double angularZ);
+        void set(double linearX, double linearY, double angularZ);
 
         void set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw);
-
-        bool limiting;
 
     private:
         NoU_Motor* _frontLeftMotor;
