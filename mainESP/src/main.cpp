@@ -189,17 +189,17 @@ void loop() {
   }
 
   ///////////////////////////////////// intake
-  if(AlfredoConnect.buttonHeld(0, 0) && millis() - lastIntakeRead > 250){
+  if(AlfredoConnect.buttonHeld(0, 0) && millis() - lastIntakeRead > 250){ // x
     lastIntakeRead = millis();
     intakeClosed = !intakeClosed;
     firstIntake = true;
   }
 
   ///////////////////////////////////// led signal
-  if(AlfredoConnect.buttonHeld(0, 2)){
+  if(AlfredoConnect.buttonHeld(0, 2)){ // triangle?
     ledState = 2; // cone
   }
-  if(AlfredoConnect.buttonHeld(0, 3)){
+  if(AlfredoConnect.buttonHeld(0, 3)){ // square?
     ledState = 3; // cube
   }
 
@@ -222,6 +222,7 @@ void loop() {
         fill_rainbow( leds, NUM_LEDS, gHue, 7);
         FastLED.show();
       }
+      
       else if(ledState == 2){ // cones
         fill_solid(leds, NUM_LEDS, CRGB::Yellow);
         FastLED.show();
@@ -232,6 +233,7 @@ void loop() {
           ledState = 1;
         }
       }
+
       else if(ledState == 3){ // cubes
         fill_solid(leds, NUM_LEDS, CRGB::Purple);
         FastLED.show();
@@ -242,6 +244,7 @@ void loop() {
           ledState = 1;
         }
       }
+
       else if(ledState == 0){ // off (should never be used)
         fill_solid(leds, NUM_LEDS, CRGB::Black);
         FastLED.show();
