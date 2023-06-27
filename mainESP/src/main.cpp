@@ -205,50 +205,56 @@ void loop() {
 
   ///////////////////////////////////// only write to hardware if enabled
   if(enabled) {
-      //teleop
-      drivetrain.set(linearX, linearY, angularZ);
-      if (firstArm) {
-        arm.set(armPreset);
-        firstArm = false;
-      }
-      if(firstIntake){
-        firstIntake = false;
-        arm.setIntake(intakeClosed);
-      }
+    serialBT.println("FrontLeft: " + String(frontLeftEncoder.getCount() /2 ) + " FrontRight: " + String(frontRightEncoder.getCount() /2 ));
+    //teleop
+    drivetrain.set(linearX, linearY, angularZ);
 
-      // led      
-      if(ledState == 1){ // rainbow
-        EVERY_N_MILLISECONDS( 20 ) { gHue++; } // make rainbow spin (copied from DemoReel100 example)
-        fill_rainbow( leds, NUM_LEDS, gHue, 7);
-        FastLED.show();
-      }
-      
-      else if(ledState == 2){ // cones
-        fill_solid(leds, NUM_LEDS, CRGB::Yellow);
-        FastLED.show();
-        if(firstLED){ // start timer for color timeout
-          ledTimeout = millis();
-        }
-        if(millis() - ledTimeout > 10000){ // go back to rainbow after 10 seconds
-          ledState = 1;
-        }
-      }
+    // arm
+    if (firstArm) {
+      arm.set(armPreset);
+      firstArm = false;
+    }
 
-      else if(ledState == 3){ // cubes
-        fill_solid(leds, NUM_LEDS, CRGB::Purple);
-        FastLED.show();
-        if(firstLED){ // start timer for color timeout
-          ledTimeout = millis();
-        }
-        if(millis() - ledTimeout > 10000){ // go back to rainbow after 10 seconds
-          ledState = 1;
-        }
-      }
+    // intake
+    if(firstIntake){
+      firstIntake = false;
+      arm.setIntake(intakeClosed);
+    }
 
-      else if(ledState == 0){ // off (should never be used)
-        fill_solid(leds, NUM_LEDS, CRGB::Black);
-        FastLED.show();
+
+    // leds
+    if(ledState == 1){ // rainbow
+      EVERY_N_MILLISECONDS( 20 ) { gHue++; } // make rainbow spin (copied from DemoReel100 example)
+      fill_rainbow( leds, NUM_LEDS, gHue, 7);
+      FastLED.show();
+    }
+
+    else if(ledState == 2){ // cones
+      fill_solid(leds, NUM_LEDS, CRGB::Yellow);
+      FastLED.show();
+      if(firstLED){ // start timer for color timeout
+        ledTimeout = millis();
       }
+      if(millis() - ledTimeout > 10000){ // go back to rainbow after 10 seconds
+        ledState = 1;
+      }
+    }
+
+    else if(ledState == 3){ // cubes
+      fill_solid(leds, NUM_LEDS, CRGB::Purple);
+      FastLED.show();
+      if(firstLED){ // start timer for color timeout
+        ledTimeout = millis();
+      }
+      if(millis() - ledTimeout > 10000){ // go back to rainbow after 10 seconds
+        ledState = 1;
+      }
+    }
+  
+    else if(ledState == 0){ // off (should never be used)
+      fill_solid(leds, NUM_LEDS, CRGB::Black);
+      FastLED.show();
+    }
   }
   /////////////////////////////////// DISABLED
   else {
@@ -275,7 +281,8 @@ double deadzone(double rawJoy){
 void driveInches(double inches, double linearX, double linearY, double angularZ) {
   double inperrev = 5.93689;
   double requiredrot = inches / inperrev;
-
+  
+  // div by 2 is bc of the counting method, dw abt it.
   double leftRot = frontLeftEncoder.getCount() /2;
   double rightRot = frontRightEncoder.getCount() /2;
 
