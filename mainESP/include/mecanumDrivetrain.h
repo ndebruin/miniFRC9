@@ -34,7 +34,7 @@ class mecanumDrivetrain
 
         // jerk limit!! in terms of change in -1 - 1 domain
 
-        double jerkLimit = 0.009;
+        double jerkLimit = 0.1;
 
 
         double toRadians(double degrees);
