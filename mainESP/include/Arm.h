@@ -7,15 +7,17 @@
 class Arm
 {
     public:
-        Arm(NoU_Servo* fourBarJoint, NoU_Servo* secondJoint);
+        Arm(NoU_Servo* fourBarJoint, NoU_Servo* secondJoint, NoU_Servo* intakeServo);
         void begin();
 
         void set(int fourBarAngle, int secondAngle);
         void set(char preset);
+        void setIntake(bool closed);
 
     private:
         NoU_Servo* _fourBarJoint;
         NoU_Servo* _secondJoint;
+        NoU_Servo* _intakeServo;
 
         int _angleFourBarLow = 0;
         int _angleSecondLow = 20;
@@ -34,6 +36,9 @@ class Arm
 
         int _angleFourBarFloor = 0;     
         int _angleSecondFloor = 75;
+
+        int _intakeClosed = 30;
+        int _intakeOpen = 0;
 };
 
 #endif

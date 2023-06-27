@@ -3,7 +3,7 @@
 #include <AlfredoConnect.h>
 #include <Alfredo_NoU2.h>
 //#include <FastLED.h>
-//#include <Encoder.h>
+#include <Encoder.h>
 
 
 #include "IMU.h"
@@ -40,7 +40,7 @@ mecanumDrivetrain drivetrain = mecanumDrivetrain(&frontLeftMotor, &frontRightMot
 
 // define encoders
 //Encoder frontLeftEncoder(1, 3);
-//Encoder frontRightEncoder(21, 22);
+Encoder frontRightEncoder(21, 22);
 
 // define servos
 NoU_Servo intakeServo(1);
@@ -48,7 +48,7 @@ NoU_Servo fourBarServo(3);
 NoU_Servo secondJointServo(4);
 
 // define arm
-Arm arm = Arm(&fourBarServo, &secondJointServo);
+Arm arm = Arm(&fourBarServo, &secondJointServo, &intakeServo);
 
 // define imu object
 IMU imu;
@@ -184,11 +184,11 @@ void loop() {
       }
       if(intakeClosed && firstIntake){
         firstIntake = false;
-        intakeServo.write(30);
+        arm.setIntake(true);
       }
       if(!intakeClosed && firstIntake){
         firstIntake = false;
-        intakeServo.write(0);
+        arm.setIntake(false);
       }
   }
   else {
@@ -210,17 +210,15 @@ double deadzone(double rawJoy){
 }
 
 // autons
-/*void driveInches(double inches, double linearX, double linearY, double angularZ) {
+void driveInches(double inches, double linearX, double linearY, double angularZ) {
   double inperrev = 5.93689;
   double requiredrot = inches / inperrev;
 
-  double leftRot = frontLeftEncoder.read();
   double rightRot = frontRightEncoder.read();
 
-  double leftTarget = leftRot + requiredrot;
   double rightTarget = rightRot + requiredrot;
 
-  while (leftRot != leftTarget || rightRot != rightRot) {
+  while (rightRot != rightRot) {
     drivetrain.set(linearX, linearY, angularZ);
   }
   drivetrain.set(0, 0, 0);
@@ -231,14 +229,12 @@ void taxiAuton() {
 }
 
 void findTicksPerRev() {
-  double leftRot = 0;
   double rightRot = 0;
   while (AlfredoConnect.keyHeld(Key::T)) {
     drivetrain.set(0.0, 0.15, 0.0);
-    leftRot = frontLeftEncoder.read();
     rightRot = frontRightEncoder.read();
-    Serial.println("Left: " + String(leftRot) + " Right: " + String(rightRot));
+    Serial.println("Right: " + String(rightRot));
   }
   drivetrain.set(0.0, 0.0, 0.0);
-  Serial.println("Final Left: " + String(leftRot) + " Final Right: " + String(rightRot));
-}*/
+  Serial.println("Final Right: " + String(rightRot));
+}
