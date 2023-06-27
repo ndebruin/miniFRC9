@@ -2,9 +2,8 @@
 #include <BluetoothSerial.h>
 #include <AlfredoConnect.h>
 #include <Alfredo_NoU2.h>
-//#include <FastLED.h>
-#include <Encoder.h>
-
+#include <FastLED.h>
+#include <ESP32Encoder.h>
 
 #include "IMU.h"
 #include "mecanumDrivetrain.h"
@@ -12,18 +11,22 @@
 // #include "EncoderComms.h"
 // #include "CameraComms.h"
 
+/////////////////////////////////// Function Declarations ///////////////////////////////////
+
 // function def
 double deadzone(double rawJoy);
 double deadzoneVal = 0.05;
-void findTicksPerRev();
 void taxiAuton();
 void driveInches(double inches, double linearX, double linearY, double angularZ);
 
-// LED defs
-//#define NUM_LEDS 16
-//#define DATA_PIN 2
+/////////////////////////////////// Hardware Declarations ///////////////////////////////////
 
-//CRGB leds[NUM_LEDS];
+// LED defs
+#define NUM_LEDS 16
+#define DATA_PIN 21
+
+CRGB leds[NUM_LEDS];
+int gHue = 0;
 
 // define bluetooth serial connection
 BluetoothSerial serialBT;
@@ -39,8 +42,8 @@ NoU_Motor backRightMotor(1);
 mecanumDrivetrain drivetrain = mecanumDrivetrain(&frontLeftMotor, &frontRightMotor, &backLeftMotor, &backRightMotor);
 
 // define encoders
-//Encoder frontLeftEncoder(1, 3);
-Encoder frontRightEncoder(21, 22);
+ESP32Encoder frontLeftEncoder; // pins 34, 35
+ESP32Encoder frontRightEncoder; // pins 36, 39
 
 // define servos
 NoU_Servo intakeServo(1);
@@ -53,21 +56,34 @@ Arm arm = Arm(&fourBarServo, &secondJointServo, &intakeServo);
 // define imu object
 IMU imu;
 
-
+/////////////////////////////////// Logic Declarations ///////////////////////////////////
 
 // enable logic and debounce
 bool enabled = false;
 unsigned long lastEnableRead = 0;
-bool armEnabled = false;
+
+bool firstArm = false;
 bool runAuton = false;
 
+// intake logic and debounce
 bool intakeClosed = false;
 unsigned long lastIntakeRead = 0;
-bool firstIntake;
+bool firstIntake = false;
+
+// led logic
+int ledState = 0;
+// 0 - off
+// 1 - rainbow
+// 2 - cone
+// 3 - cube
+bool firstLED = false;
+unsigned long ledTimeout = 0;
 
 // current arm preset
 char armPreset = '0';
 
+
+////////////////////////////////////////////////////////////////////// setup() //////////////////////////////////////////////////////////////////////
 void setup() {
   // begin DS comms
   serialBT.begin(robotName);
@@ -83,6 +99,7 @@ void setup() {
   // start arm
   arm.begin();
 
+  // start RSL
   RSL::initialize();
 
   // set direction of motors
@@ -91,10 +108,21 @@ void setup() {
   backLeftMotor.setInverted(true);
   backRightMotor.setInverted(true);
 
-}
+  // init encoders
+  frontLeftEncoder.attachHalfQuad(34, 35);
+  frontRightEncoder.attachHalfQuad(36, 39);
+  frontLeftEncoder.setCount(0);
+  frontRightEncoder.setCount(0);
 
+  // init leds
+  FastLED.addLeds<NEOPIXEL,DATA_PIN>(leds, NUM_LEDS);
+  // brightness limit
+  FastLED.setBrightness(50);
+  // clear all
+  FastLED.clear(true);
+}
+////////////////////////////////////////////////////////////////////// loop() //////////////////////////////////////////////////////////////////////
 void loop() {
-  //fill_solid(leds, NUM_LEDS, CRGB::Green);
 
   // parse updates from IMU
   imu.read();
@@ -108,6 +136,7 @@ void loop() {
     enabled = !enabled;
   }
 
+  // rsl logic
   if(enabled){
     RSL::setState(RSL_ENABLED);
   }
@@ -115,7 +144,7 @@ void loop() {
     RSL::setState(RSL_DISABLED);
   }
 
-  // get values from controller for drivetrain
+  ///////////////////////////////////// get values from controller for drivetrain
   double linearX = -AlfredoConnect.getAxis(0, 0); // angularZ
   double linearY = AlfredoConnect.getAxis(0, 1); // linearX
   double angularZ = AlfredoConnect.getAxis(0, 2); // linearY
@@ -133,73 +162,103 @@ void loop() {
     linearX = 0.0;
   }
 
-  // get arm preset positions from controller
+  ///////////////////////////////////// get arm preset positions from controller
   if(AlfredoConnect.buttonHeld(0, 7)){ // right bumper
     armPreset = 'H'; // high node
-    armEnabled = true;
+    firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 6)){ // left bumper
     armPreset = 'D'; // double substation
-    armEnabled = true;
+    firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 12)) { // dpad up
     armPreset = 'M'; // mid node
-    armEnabled = true;
+    firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 15)) { // dpad right
     armPreset = 'L'; // low node
-    armEnabled = true;
+    firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 13)) { // dpad down
     armPreset = '0'; // stow
-    armEnabled = true;
+    firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 14)) { // dpad left
     armPreset = 'F'; // floor
-    armEnabled = true;
+    firstArm = true;
   }
 
-  // intake
+  ///////////////////////////////////// intake
   if(AlfredoConnect.buttonHeld(0, 0) && millis() - lastIntakeRead > 250){
     lastIntakeRead = millis();
     intakeClosed = !intakeClosed;
     firstIntake = true;
   }
 
-  
+  ///////////////////////////////////// led signal
+  if(AlfredoConnect.buttonHeld(0, 2)){
+    ledState = 2; // cone
+  }
+  if(AlfredoConnect.buttonHeld(0, 3)){
+    ledState = 3; // cube
+  }
 
-  // only write to hardware if enabled
+  ///////////////////////////////////// only write to hardware if enabled
   if(enabled) {
-    /*if (runAuton) {
-      //auton
-      runAuton = false;
-      findTicksPerRev();
-    }*/
-    
       //teleop
       drivetrain.set(linearX, linearY, angularZ);
-      if (armEnabled) {
+      if (firstArm) {
         arm.set(armPreset);
-        armEnabled = false;
+        firstArm = false;
       }
-      if(intakeClosed && firstIntake){
+      if(firstIntake){
         firstIntake = false;
-        arm.setIntake(true);
+        arm.setIntake(intakeClosed);
       }
-      if(!intakeClosed && firstIntake){
-        firstIntake = false;
-        arm.setIntake(false);
+
+      // led      
+      if(ledState == 1){ // rainbow
+        EVERY_N_MILLISECONDS( 20 ) { gHue++; } // make rainbow spin (copied from DemoReel100 example)
+        fill_rainbow( leds, NUM_LEDS, gHue, 7);
+        FastLED.show();
+      }
+      else if(ledState == 2){ // cones
+        fill_solid(leds, NUM_LEDS, CRGB::Yellow);
+        FastLED.show();
+        if(firstLED){ // start timer for color timeout
+          ledTimeout = millis();
+        }
+        if(millis() - ledTimeout > 10000){ // go back to rainbow after 10 seconds
+          ledState = 1;
+        }
+      }
+      else if(ledState == 3){ // cubes
+        fill_solid(leds, NUM_LEDS, CRGB::Purple);
+        FastLED.show();
+        if(firstLED){ // start timer for color timeout
+          ledTimeout = millis();
+        }
+        if(millis() - ledTimeout > 10000){ // go back to rainbow after 10 seconds
+          ledState = 1;
+        }
+      }
+      else if(ledState == 0){ // off (should never be used)
+        fill_solid(leds, NUM_LEDS, CRGB::Black);
+        FastLED.show();
       }
   }
+  /////////////////////////////////// DISABLED
   else {
     // drivetrain e-stop if disabled
     frontLeftMotor.set(0.0);
     frontRightMotor.set(0.0);
     backLeftMotor.set(0.0);
     backRightMotor.set(0.0);
+
+    FastLED.clear(true); // turn off leds
   }
 }
-
+////////////////////////////////////////////////////////////////////// Function Code //////////////////////////////////////////////////////////////////////
 
 // joystick deadzone
 double deadzone(double rawJoy){
@@ -214,11 +273,13 @@ void driveInches(double inches, double linearX, double linearY, double angularZ)
   double inperrev = 5.93689;
   double requiredrot = inches / inperrev;
 
-  double rightRot = frontRightEncoder.read();
+  double leftRot = frontLeftEncoder.getCount() /2;
+  double rightRot = frontRightEncoder.getCount() /2;
 
+  double leftTarget = leftRot + requiredrot;
   double rightTarget = rightRot + requiredrot;
 
-  while (rightRot != rightRot) {
+  while (rightRot != rightTarget || leftRot != leftTarget) {
     drivetrain.set(linearX, linearY, angularZ);
   }
   drivetrain.set(0, 0, 0);
@@ -226,15 +287,4 @@ void driveInches(double inches, double linearX, double linearY, double angularZ)
 
 void taxiAuton() {
   driveInches(35.0, 0.0, 0.6, 0.0);
-}
-
-void findTicksPerRev() {
-  double rightRot = 0;
-  while (AlfredoConnect.keyHeld(Key::T)) {
-    drivetrain.set(0.0, 0.15, 0.0);
-    rightRot = frontRightEncoder.read();
-    Serial.println("Right: " + String(rightRot));
-  }
-  drivetrain.set(0.0, 0.0, 0.0);
-  Serial.println("Final Right: " + String(rightRot));
 }

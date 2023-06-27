@@ -36,7 +36,7 @@ void Arm::set(char preset) {
             set(_angleFourBarSingle, _angleSecondSingle);
             break;
         default:
-            set(0,0);
+            set(_angleFourBarStow, _angleSecondStow);
             break;
     }
 }

@@ -19,6 +19,9 @@ class Arm
         NoU_Servo* _secondJoint;
         NoU_Servo* _intakeServo;
 
+        int _angleFourBarStow = 2;
+        int _angleSecondStow = 0;
+
         int _angleFourBarLow = 0;
         int _angleSecondLow = 20;
 
