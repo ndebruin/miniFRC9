@@ -21,13 +21,6 @@ void driveInches(double inches, double linearX, double linearY, double angularZ)
 
 /////////////////////////////////// Hardware Declarations ///////////////////////////////////
 
-// LED defs
-#define NUM_LEDS 16
-#define DATA_PIN 21
-
-CRGB leds[NUM_LEDS];
-int gHue = 0;
-
 // define bluetooth serial connection
 BluetoothSerial serialBT;
 String robotName = "roboeaglets";
@@ -70,15 +63,6 @@ bool intakeClosed = false;
 unsigned long lastIntakeRead = 0;
 bool firstIntake = false;
 
-// led logic
-int ledState = 0;
-// 0 - off
-// 1 - rainbow
-// 2 - cone
-// 3 - cube
-bool firstLED = false;
-unsigned long ledTimeout = 0;
-
 // current arm preset
 char armPreset = '0';
 
@@ -87,14 +71,15 @@ char armPreset = '0';
 void setup() {
   // begin DS comms
   serialBT.begin(robotName);
-  AlfredoConnect.begin(serialBT);
-
-  // start I2C
-  Wire1.begin(5, 4);
-  Wire1.setClock(400000);
+  AlfredoConnect.begin(serialBT, true); // providing true means we won't get annoying errors regarding lack of joystick data
 
   // start imu
-  imu.begin(Wire1);
+  uint8_t imuStarted = imu.begin(5, 4);
+
+  if(imuStarted > 0){
+    serialBT.println("ERROR! IMU FAILED TO START");
+    serialBT.println("Error code: " + String(imuStarted));
+  }
 
   // start arm
   arm.begin();
@@ -113,19 +98,16 @@ void setup() {
   frontRightEncoder.attachHalfQuad(36, 39);
   frontLeftEncoder.setCount(0);
   frontRightEncoder.setCount(0);
-
-  // init leds
-  FastLED.addLeds<NEOPIXEL,DATA_PIN>(leds, NUM_LEDS);
-  // brightness limit
-  FastLED.setBrightness(50);
-  // clear all
-  FastLED.clear(true);
 }
 ////////////////////////////////////////////////////////////////////// loop() //////////////////////////////////////////////////////////////////////
 void loop() {
 
   // parse updates from IMU
-  imu.read();
+  uint8_t imuRead = imu.read();
+  if(imuRead > 0){
+    serialBT.println("ERROR. IMU FAILED TO READ.");
+    serialBT.println("Error code: " + String(imuRead));
+  }
 
   // parse updates from driver station
   AlfredoConnect.update();
@@ -195,18 +177,10 @@ void loop() {
     firstIntake = true;
   }
 
-  ///////////////////////////////////// led signal
-  if(AlfredoConnect.buttonHeld(0, 2)){ // triangle?
-    ledState = 2; // cone
-  }
-  if(AlfredoConnect.buttonHeld(0, 3)){ // square?
-    ledState = 3; // cube
-  }
-
   ///////////////////////////////////// only write to hardware if enabled
   if(enabled) {
     //teleop
-    serialBT.println(String(imu.getYaw()));
+    //serialBT.println("Pitch: " + String(imu.getPitch()) + " Roll: " + String(imu.getRoll()) + " Yaw: " + String(imu.getYaw()));
     drivetrain.set(linearX, linearY, angularZ);
 
     // arm
@@ -220,41 +194,6 @@ void loop() {
       firstIntake = false;
       arm.setIntake(intakeClosed);
     }
-
-
-    // leds
-    if(ledState == 1){ // rainbow
-      EVERY_N_MILLISECONDS( 20 ) { gHue++; } // make rainbow spin (copied from DemoReel100 example)
-      fill_rainbow( leds, NUM_LEDS, gHue, 7);
-      FastLED.show();
-    }
-
-    else if(ledState == 2){ // cones
-      fill_solid(leds, NUM_LEDS, CRGB::Yellow);
-      FastLED.show();
-      if(firstLED){ // start timer for color timeout
-        ledTimeout = millis();
-      }
-      if(millis() - ledTimeout > 10000){ // go back to rainbow after 10 seconds
-        ledState = 1;
-      }
-    }
-
-    else if(ledState == 3){ // cubes
-      fill_solid(leds, NUM_LEDS, CRGB::Purple);
-      FastLED.show();
-      if(firstLED){ // start timer for color timeout
-        ledTimeout = millis();
-      }
-      if(millis() - ledTimeout > 10000){ // go back to rainbow after 10 seconds
-        ledState = 1;
-      }
-    }
-  
-    else if(ledState == 0){ // off (should never be used)
-      fill_solid(leds, NUM_LEDS, CRGB::Black);
-      FastLED.show();
-    }
   }
   /////////////////////////////////// DISABLED
   else {
@@ -263,8 +202,6 @@ void loop() {
     frontRightMotor.set(0.0);
     backLeftMotor.set(0.0);
     backRightMotor.set(0.0);
-
-    FastLED.clear(true); // turn off leds
   }
 }
 ////////////////////////////////////////////////////////////////////// Function Code //////////////////////////////////////////////////////////////////////
@@ -282,9 +219,9 @@ void driveInches(double inches, double linearX, double linearY, double angularZ)
   double inperrev = 5.93689;
   double requiredrot = inches / inperrev;
   
-  // div by 2 is bc of the counting method, dw abt it.
-  double leftRot = frontLeftEncoder.getCount() /2;
-  double rightRot = frontRightEncoder.getCount() /2;
+  // 40 ticks per rev
+  double leftRot = frontLeftEncoder.getCount();
+  double rightRot = frontRightEncoder.getCount();
 
   double leftTarget = leftRot + requiredrot;
   double rightTarget = rightRot + requiredrot;

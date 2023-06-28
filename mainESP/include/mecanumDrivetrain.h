@@ -32,7 +32,7 @@ class mecanumDrivetrain
         float frontRightDesiredPower;
         float backRightDesiredPower;
 
-        // jerk limit!! in terms of change in -1 - 1 domain
+        // jerk limit!! in terms of change in -1 -> 1 domain
 
         double jerkLimit = 0.045;
 
