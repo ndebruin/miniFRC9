@@ -25,12 +25,6 @@ void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, boo
   double rotX = linX * cos(-botHeading) - linY * sin(-botHeading);
   double rotY = linX * sin(-botHeading) + linY * cos(-botHeading);
 
-  double denominator = max(abs(rotY) + abs(rotX) + abs(angZ), 1.0);
-  frontLeftDesiredPower = (rotY + rotX + angZ);
-  backLeftDesiredPower = (rotY - rotX + angZ);
-  frontRightDesiredPower = (rotY - rotX - angZ);
-  backRightDesiredPower = (rotY + rotX - angZ);
-
   double maxMagnitude = max(fabs(frontLeftDesiredPower), max(fabs(frontRightDesiredPower), max(fabs(backLeftDesiredPower), fabs(backRightDesiredPower))));
   if(maxMagnitude > 1.0){
     frontLeftDesiredPower /= maxMagnitude;

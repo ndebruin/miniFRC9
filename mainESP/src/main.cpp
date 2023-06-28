@@ -145,9 +145,9 @@ void loop() {
   }
 
   ///////////////////////////////////// get values from controller for drivetrain
-  double linearX = -AlfredoConnect.getAxis(0, 0); // angularZ
-  double linearY = AlfredoConnect.getAxis(0, 1); // linearX
-  double angularZ = AlfredoConnect.getAxis(0, 2); // linearY
+  double linearX = -AlfredoConnect.getAxis(0, 2); // angularZ
+  double linearY = AlfredoConnect.getAxis(0, 3); // linearX
+  double angularZ = AlfredoConnect.getAxis(0, 0); // linearY
 
   // apply deadzone
   linearX = deadzone(linearX);
@@ -155,19 +155,19 @@ void loop() {
   angularZ = deadzone(angularZ);
   
   // apply straightening
-  if(fabs(linearX) > 0.95 && fabs(linearY) < 0.3){
+  if(fabs(linearX) > 0.95 && fabs(linearY) < 0.4){
     linearY = 0.0;
   }
-  if(fabs(linearY) > 0.95 && fabs(linearX) < 0.3){
+  if(fabs(linearY) > 0.95 && fabs(linearX) < 0.4){
     linearX = 0.0;
   }
 
   ///////////////////////////////////// get arm preset positions from controller
-  if(AlfredoConnect.buttonHeld(0, 7)){ // right bumper
+  if(AlfredoConnect.buttonHeld(0, 15)){ // dpad right
     armPreset = 'H'; // high node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 6)){ // left bumper
+  if(AlfredoConnect.buttonHeld(0, 13)){ // dpad down
     armPreset = 'D'; // double substation
     firstArm = true;
   }
@@ -175,15 +175,15 @@ void loop() {
     armPreset = 'M'; // mid node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 15)) { // dpad right
+  if(AlfredoConnect.buttonHeld(0, 14)) { // dpad left
     armPreset = 'L'; // low node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 13)) { // dpad down
+  if(AlfredoConnect.buttonHeld(0, 7)) { // right trigger
     armPreset = '0'; // stow
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 14)) { // dpad left
+  if(AlfredoConnect.buttonHeld(0, 6)) { // left trigger
     armPreset = 'F'; // floor
     firstArm = true;
   }
@@ -205,8 +205,8 @@ void loop() {
 
   ///////////////////////////////////// only write to hardware if enabled
   if(enabled) {
-    serialBT.println("FrontLeft: " + String(frontLeftEncoder.getCount() /2 ) + " FrontRight: " + String(frontRightEncoder.getCount() /2 ));
     //teleop
+    serialBT.println(String(imu.getYaw()));
     drivetrain.set(linearX, linearY, angularZ);
 
     // arm
