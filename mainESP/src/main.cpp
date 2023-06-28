@@ -2,7 +2,6 @@
 #include <BluetoothSerial.h>
 #include <AlfredoConnect.h>
 #include <Alfredo_NoU2.h>
-#include <FastLED.h>
 #include <ESP32Encoder.h>
 
 #include "IMU.h"
@@ -66,7 +65,7 @@ bool firstIntake = false;
 // current arm preset
 char armPreset = '0';
 
-
+uint8_t imuStarted;
 ////////////////////////////////////////////////////////////////////// setup() //////////////////////////////////////////////////////////////////////
 void setup() {
   // begin DS comms
@@ -74,12 +73,9 @@ void setup() {
   AlfredoConnect.begin(serialBT, true); // providing true means we won't get annoying errors regarding lack of joystick data
 
   // start imu
-  uint8_t imuStarted = imu.begin(5, 4);
+  imuStarted = imu.begin(5, 4);
 
-  if(imuStarted > 0){
-    serialBT.println("ERROR! IMU FAILED TO START");
-    serialBT.println("Error code: " + String(imuStarted));
-  }
+  
 
   // start arm
   arm.begin();
@@ -107,6 +103,11 @@ void loop() {
   if(imuRead > 0){
     serialBT.println("ERROR. IMU FAILED TO READ.");
     serialBT.println("Error code: " + String(imuRead));
+  }
+
+  if(imuStarted > 0){
+    serialBT.println("ERROR! IMU FAILED TO START");
+    serialBT.println("Error code: " + String(imuStarted));
   }
 
   // parse updates from driver station
@@ -180,7 +181,7 @@ void loop() {
   ///////////////////////////////////// only write to hardware if enabled
   if(enabled) {
     //teleop
-    //serialBT.println("Pitch: " + String(imu.getPitch()) + " Roll: " + String(imu.getRoll()) + " Yaw: " + String(imu.getYaw()));
+    serialBT.println("Pitch: " + String(imu.getPitch()) + " Roll: " + String(imu.getRoll()) + " Yaw: " + String(imu.getYaw()));
     drivetrain.set(linearX, linearY, angularZ);
 
     // arm

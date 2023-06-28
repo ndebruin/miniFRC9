@@ -11,7 +11,7 @@
 uint8_t IMU::begin(uint8_t SDA, uint8_t SCL)
 {
   // start i2c interface
-  wire.begin(SDA, SCL);
+  wire.begin();
   wire.setClock(400000);
 
   // start imu object comms
@@ -122,11 +122,6 @@ int8_t IMU::read()
     }
     // if we get to here, that means that we received valid data, but the wrong type of data
     return 1;
-  }
-
-  // no data
-  else if(imuObj.status == ICM_20948_Stat_FIFONoDataAvail){
-    return -1;
   }
 
   // invalid data
