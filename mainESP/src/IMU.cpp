@@ -128,7 +128,7 @@ int8_t IMU::read()
   else if(imuObj.status == ICM_20948_Stat_FIFOIncompleteData){
     return 2;
   }
-  return 2;
+  return 0;
 }
 
 
