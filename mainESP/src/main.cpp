@@ -43,12 +43,12 @@ ESP32Encoder frontLeftEncoder; // pins 34, 35
 ESP32Encoder frontRightEncoder; // pins 36, 39
 
 // define servos
-NoU_Servo intakeServo(1);
+NoU_Motor intakeMotor(5);
 NoU_Servo fourBarServo(3);
 NoU_Servo secondJointServo(4);
 
 // define arm
-Arm arm = Arm(&fourBarServo, &secondJointServo, &intakeServo);
+Arm arm = Arm(&fourBarServo, &secondJointServo, &intakeMotor);
 
 // define imu object
 IMU imu;
