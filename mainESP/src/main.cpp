@@ -87,9 +87,7 @@ void setup() {
   AlfredoConnect.begin(serialBT, true); // providing true means we won't get annoying errors regarding lack of joystick data
 
   // start imu
-  imuStarted = imu.begin(5, 4);
-
-  
+  imuStarted = imu.begin(5, 4);  
 
   // start arm
   arm.begin();
@@ -102,6 +100,8 @@ void setup() {
   frontRightMotor.setInverted(false);
   backLeftMotor.setInverted(true);
   backRightMotor.setInverted(true);
+
+  intakeMotor.setInverted(false);
 
   // init encoders
   frontLeftEncoder.attachHalfQuad(34, 35);
