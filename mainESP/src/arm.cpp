@@ -1,13 +1,13 @@
 #include "Arm.h"
 
-Arm::Arm(NoU_Servo* fourbarJoint, NoU_Servo* secondJoint, NoU_Servo* intakeServo) 
-                                    : _fourBarJoint(fourbarJoint), _secondJoint(secondJoint), _intakeServo(intakeServo)
+Arm::Arm(NoU_Servo* fourbarJoint, NoU_Servo* secondJoint, NoU_Motor* intakeMotor) 
+                                    : _fourBarJoint(fourbarJoint), _secondJoint(secondJoint), _intakeMotor(intakeMotor)
 { }
 
 void Arm::begin(){
   _fourBarJoint->write(0);
   _secondJoint->write(0);
-  _intakeServo->write(_intakeOpen);
+  _intakeMotor->set(0);
 }
 
 void Arm::set(int fourBarAngle, int secondAngle){
@@ -41,10 +41,10 @@ void Arm::set(char preset) {
     }
 }
 
-void Arm::setIntake(bool closed) {
-    if(closed){
-        _intakeServo->write(_intakeClosed);
+void Arm::setIntake(bool on) {
+    if(on){
+        _intakeMotor->set(1);
     } else {
-        _intakeServo->write(_intakeOpen);
+        _intakeMotor->set(0);
     }
 }

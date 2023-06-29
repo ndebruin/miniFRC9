@@ -7,7 +7,7 @@
 class Arm
 {
     public:
-        Arm(NoU_Servo* fourBarJoint, NoU_Servo* secondJoint, NoU_Servo* intakeServo);
+        Arm(NoU_Servo* fourBarJoint, NoU_Servo* secondJoint, NoU_Motor* intakeMotor);
         void begin();
 
         void set(int fourBarAngle, int secondAngle);
@@ -17,7 +17,7 @@ class Arm
     private:
         NoU_Servo* _fourBarJoint;
         NoU_Servo* _secondJoint;
-        NoU_Servo* _intakeServo;
+        NoU_Motor* _intakeMotor;
 
         int _angleFourBarStow = 0;
         int _angleSecondStow = 0;

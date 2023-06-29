@@ -251,7 +251,7 @@ void loop() {
     // intake
     if(firstIntake){
       firstIntake = false;
-      arm.setIntake(intakeClosed);
+      arm.setIntake(!intakeClosed);
     }
   }
   /////////////////////////////////// DISABLED
@@ -261,6 +261,7 @@ void loop() {
     frontRightMotor.set(0.0);
     backLeftMotor.set(0.0);
     backRightMotor.set(0.0);
+    arm.setIntake(false);
   }
 }
 ////////////////////////////////////////////////////////////////////// Function Code //////////////////////////////////////////////////////////////////////
