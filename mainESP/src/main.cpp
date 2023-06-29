@@ -13,8 +13,15 @@
 // function def
 double deadzone(double rawJoy);
 double deadzoneVal = 0.05;
-void taxiAuton();
+void updateYaw();
+void autonCharge();
+void autonFar();
+void autonClose();
+void turnAuton();
+void placeHighAuton();
 void driveInches(double inches, double linearX, double linearY, double angularZ);
+void taxiAuton();
+void chargeAuton();
 
 /////////////////////////////////// Hardware Declarations ///////////////////////////////////
 
@@ -67,6 +74,7 @@ bool fieldOriented = false;
 unsigned long lastOrientedRead = 0;
 
 double yawOffset = 0.0;
+double robotHeading = 0.0;
 
 unsigned long lastRSLFlash = 0;
 bool RSLState = false;
@@ -117,24 +125,7 @@ void loop() {
   }
 
   // manage yaw data
-  double robotHeading = 0.0;
-  if(imu.getYaw() < 0){
-    robotHeading = imu.getYaw() + 360;
-  }
-  else{
-    robotHeading = imu.getYaw();
-  }
-
-  // add reCal offset
-  robotHeading += yawOffset;
-
-  // wrap rotation
-  if (robotHeading > 360) {
-    robotHeading -= 360;
-  }
-  else if (robotHeading < 0) {
-    robotHeading += 360;
-  }
+  updateYaw();
 
   // check for disconnect
   if(!AlfredoConnect.getGamepadCount() >= 1){
@@ -160,6 +151,19 @@ void loop() {
   }
   else{
     digitalWrite(LED_BUILTIN, HIGH);
+  }
+
+  ///////////////////////////////////// auton triggers
+  if(AlfredoConnect.keyHeld(Key::Q)){
+    autonFar();
+  }
+
+  if(AlfredoConnect.keyHeld(Key::W)){
+    autonCharge();
+  }
+
+  if(AlfredoConnect.keyHeld(Key::E)){
+    autonClose();
   }
 
   ///////////////////////////////////// get values from controller for drivetrain
@@ -228,7 +232,7 @@ void loop() {
   ///////////////////////////////////// only write to hardware if enabled
   if(enabled) {
     //teleop
-    serialBT.println(String(imu.getYaw()));
+    serialBT.println("Raw data: " + String(imu.getYaw()) + "robotHeading: " + String(robotHeading));
     
     // drivetrain
     if(fieldOriented){
@@ -269,14 +273,35 @@ double deadzone(double rawJoy){
   return rawJoy;
 }
 
+void updateYaw(){
+  // manage yaw data
+  if(imu.getYaw() < 0){
+    robotHeading = imu.getYaw() + 360;
+  }
+  else{
+    robotHeading = imu.getYaw();
+  }
+
+  // add reCal offset
+  robotHeading += yawOffset;
+
+  // wrap rotation
+  if (robotHeading > 360) {
+    robotHeading -= 360;
+  }
+  else if (robotHeading < 0) {
+    robotHeading += 360;
+  }
+}
+
 // autons
 void driveInches(double inches, double linearX, double linearY, double angularZ) {
-  double inperrev = 5.93689;
-  double requiredrot = inches / inperrev;
+  double revsperin = 1.0/5.93689;
+  double requiredrot = revsperin * inches;
   
   // 40 ticks per rev
-  double leftRot = frontLeftEncoder.getCount();
-  double rightRot = frontRightEncoder.getCount();
+  double leftRot = frontLeftEncoder.getCount() / 40.0;
+  double rightRot = frontRightEncoder.getCount() / 40.0;
 
   double leftTarget = leftRot + requiredrot;
   double rightTarget = rightRot + requiredrot;
@@ -287,6 +312,97 @@ void driveInches(double inches, double linearX, double linearY, double angularZ)
   drivetrain.set(0, 0, 0);
 }
 
+// actual autons
+void autonCharge(){
+  placeHighAuton();
+  turnAuton();
+  chargeAuton();
+}
+
+void autonClose(){
+  placeHighAuton();
+  turnAuton();
+  taxiAuton();
+}
+
+void autonFar(){
+  placeHighAuton();
+  turnAuton();
+  taxiAuton();
+}
+
+void floorPickAuton(){
+  arm.set('F');
+  delay(50);
+  arm.setIntake(true);
+  drivetrain.set(0.0, 0.6, 0.0);
+  delay(100);
+  drivetrain.set(0.0, 0.0, 0.0);
+  arm.set('0');
+}
+
+void turnAuton(){
+  double initialYaw = robotHeading;
+
+  while(fabs(robotHeading-initialYaw) < 150){
+    imu.read();
+    updateYaw();
+    serialBT.println("Raw: " + String(imu.getYaw()) + " RobotHeading: " + String(robotHeading) + String(fabs(robotHeading - initialYaw)));
+    drivetrain.set(0.0, 0.0, -0.8);
+  }
+}
+
+void placeHighAuton(){
+  arm.set('H'); // set arm to high
+  delay(200); // wait for it to get there
+  arm.setIntake(false); // output piece
+  delay(1000); // wait for piece to evacuate
+  arm.set('0'); // stow arm
+  delay(200);
+}
+
+
 void taxiAuton() {
-  driveInches(35.0, 0.0, 0.6, 0.0);
+  driveInches(35.0, 0.0, -0.8, 0.0);
+}
+
+void chargeAuton() {
+  // drive until we run into charge station
+  while(fabs(imu.getPitch()) < 5){
+    drivetrain.set(0.0, 0.8, 0.0);
+  }
+
+  // drive until we are on top
+  while(fabs(imu.getPitch()) > 5){
+    drivetrain.set(0.0, 0.8, 0.0);
+  }
+  drivetrain.set(0.0, 0.0, 0.0);
+
+  // taxi part
+  // off of balanced
+  while(fabs(imu.getPitch()) < 5){
+    drivetrain.set(0.0, 0.6, 0.0);
+  }
+
+  // all the way off
+  while(fabs(imu.getPitch()) > 5){
+    drivetrain.set(0.0, 0.6, 0.0);
+  }
+  // stop
+  drivetrain.set(0.0, 0.0, 0.0);
+  // wait 100 ms
+  delay(100);
+
+  // drive back up
+
+  // drive until we run into charge station
+  while(fabs(imu.getPitch()) < 5){
+    drivetrain.set(0.0, -0.8, 0.0);
+  }
+
+  // drive until we are on top
+  while(fabs(imu.getPitch()) > 5){
+    drivetrain.set(0.0, -0.8, 0.0);
+  }
+  drivetrain.set(0.0, 0.0, 0.0);
 }
