@@ -12,7 +12,7 @@ class Arm
 
         void set(int fourBarAngle, int secondAngle);
         void set(char preset);
-        void setIntake(bool closed);
+        void setIntake(double on);
 
     private:
         NoU_Servo* _fourBarJoint;
