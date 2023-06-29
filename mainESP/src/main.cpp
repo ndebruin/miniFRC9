@@ -7,10 +7,6 @@
 #include "IMU.h"
 #include "mecanumDrivetrain.h"
 #include "Arm.h"
-// #include "EncoderComms.h"
-// #include "CameraComms.h"
-
-#define LED_BUILTIN 2
 
 /////////////////////////////////// Function Declarations ///////////////////////////////////
 
@@ -70,6 +66,11 @@ char armPreset = '0';
 bool fieldOriented = false;
 unsigned long lastOrientedRead = 0;
 
+double yawOffset = 0.0;
+
+unsigned long lastRSLFlash = 0;
+bool RSLState = false;
+
 uint8_t imuStarted;
 ////////////////////////////////////////////////////////////////////// setup() //////////////////////////////////////////////////////////////////////
 void setup() {
@@ -115,6 +116,31 @@ void loop() {
     serialBT.println("Error code: " + String(imuStarted));
   }
 
+  // manage yaw data
+  double robotHeading = 0.0;
+  if(imu.getYaw() < 0){
+    robotHeading = imu.getYaw() + 360;
+  }
+  else{
+    robotHeading = imu.getYaw();
+  }
+
+  // add reCal offset
+  robotHeading += yawOffset;
+
+  // wrap rotation
+  if (robotHeading > 360) {
+    robotHeading -= 360;
+  }
+  else if (robotHeading < 0) {
+    robotHeading += 360;
+  }
+
+  // check for disconnect
+  if(!AlfredoConnect.getGamepadCount() >= 1){
+    enabled = false;
+  }
+
   // parse updates from driver station
   AlfredoConnect.update();
 
@@ -126,10 +152,14 @@ void loop() {
 
   // rsl logic
   if(enabled){
-    digitalWrite(LED_BUILTIN, HIGH);
+    if(millis() - lastRSLFlash > 500){
+      lastRSLFlash = millis();
+      digitalWrite(LED_BUILTIN, RSLState);
+      RSLState = !RSLState;
+    }
   }
   else{
-    digitalWrite(LED_BUILTIN, LOW);
+    digitalWrite(LED_BUILTIN, HIGH);
   }
 
   ///////////////////////////////////// get values from controller for drivetrain
@@ -155,16 +185,16 @@ void loop() {
     armPreset = 'H'; // high node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 0)){ // x
-    armPreset = 'S'; // single substation
+  if(AlfredoConnect.buttonHeld(0, 2)){ // square
+    armPreset = 'D'; // double substation
     firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 3)) { // triangle
     armPreset = 'M'; // mid node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 2)) { // square
-    armPreset = 'L'; // low node
+  if(AlfredoConnect.buttonHeld(0, 0)) { // x
+    armPreset = 'F'; // floor
     firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 6)) { // left trigger
@@ -172,9 +202,10 @@ void loop() {
     firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 7)) { // right trigger
-    armPreset = 'F'; // floor
+    armPreset = 'S'; // single substation
     firstArm = true;
   }
+  
 
   ///////////////////////////////////// intake
   if(AlfredoConnect.buttonHeld(0, 13) && millis() - lastIntakeRead > 250){ // dpad down
@@ -189,13 +220,19 @@ void loop() {
     fieldOriented = !fieldOriented;
   }
 
+  ///////////////////////////////////// field oriented reCal
+  if(AlfredoConnect.buttonHeld(0, 8)){
+    yawOffset = -imu.getYaw();
+  }
+
   ///////////////////////////////////// only write to hardware if enabled
   if(enabled) {
     //teleop
+    serialBT.println(String(imu.getYaw()));
     
     // drivetrain
     if(fieldOriented){
-      drivetrain.set(linearX, linearY, angularZ, imu.getYaw());
+      drivetrain.set(linearX, linearY, angularZ, robotHeading);
     }
     else{
       drivetrain.set(linearX, linearY, angularZ);

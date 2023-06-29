@@ -12,47 +12,48 @@ void mecanumDrivetrain::begin(){
 }
 
 void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, double yaw) {
-  double linX = linearX;
-  double linY = linearY;
-  double angZ = angularZ;
-  if (this->flipped) {
-    linX = angularZ;
-    linY = linearX;
-    angZ = linearY;
+
+  linearY *= -1.0;
+
+  double joystickAngle = 0.0;
+
+  // convert linearX/linearY to polar
+  if(linearX != 0){
+    if(linearX >= 0 && linearY <= 0){ // Q1
+      joystickAngle = atan(linearY / linearX) * -180.0 / PI;
+    }
+    else if (linearX <= 0 && linearY <= 0) { //Q2
+      joystickAngle = atan(linearY / linearX) * -180 / PI + 180;
+    }
+    else if (linearX <= 0 && linearY >= 0) { //Q3
+      joystickAngle = atan(linearY / linearX) * -180 / PI + 180;
+    }
+    else { //Q4
+      joystickAngle = atan(linearY / linearX) * -180 / PI + 360;
+    }
+  }
+  else {
+    if (linearY >= 0) {
+      joystickAngle = 270;
+    }
+    else {
+      joystickAngle = 90;
+    }
   }
 
-  double botHeading = yaw;
-  double rotX = linX * cos(-botHeading) - linY * sin(-botHeading);
-  double rotY = linX * sin(-botHeading) + linY * cos(-botHeading);
+  double skew = joystickAngle - yaw; //determine difference between robot angle and joystick angle
+  double joystickMag = sqrt(pow(linearX, 2) + pow(linearY, 2)); //find magnitude of joystick values
 
-  double maxMagnitude = max(fabs(frontLeftDesiredPower), max(fabs(frontRightDesiredPower), max(fabs(backLeftDesiredPower), fabs(backRightDesiredPower))));
-  if(maxMagnitude > 1.0){
-    frontLeftDesiredPower /= maxMagnitude;
-    frontRightDesiredPower /= maxMagnitude;
-    backLeftDesiredPower /= maxMagnitude;
-    backRightDesiredPower /= maxMagnitude;    
-  }
+  double linearXPrime = joystickMag * cos(skew * PI / 180.0);
+  double linearYPrime = joystickMag * sin(skew * PI / 180.0);
 
-  frontLeftCurrentPower = applyJerkLimit(frontLeftCurrentPower, frontLeftDesiredPower);
-  frontRightCurrentPower = applyJerkLimit(frontRightCurrentPower, frontRightDesiredPower);
-  backLeftCurrentPower = applyJerkLimit(backLeftCurrentPower, backLeftDesiredPower);
-  backRightCurrentPower = applyJerkLimit(backRightCurrentPower, backRightDesiredPower);
-
-  _frontLeftMotor->set(frontLeftCurrentPower);
-  _frontRightMotor->set(frontRightCurrentPower);
-  _backLeftMotor->set(backLeftCurrentPower);
-  _backRightMotor->set(backRightCurrentPower);
+  set(linearXPrime, linearYPrime, angularZ);
 }
 
 void mecanumDrivetrain::set(double linearX, double linearY, double angularZ) {
   double linX = linearX;
   double linY = linearY;
   double angZ = angularZ;
-  if (this->flipped) {
-    linX = angularZ;
-    linY = linearX;
-    angZ = linearY;
-  }
 
   frontLeftDesiredPower = ((linX - linY - angZ));
   backLeftDesiredPower = ((linX + linY + angZ));
