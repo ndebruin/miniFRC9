@@ -23,13 +23,13 @@ class Arm
         int _angleSecondStow = 0;
 
         int _angleFourBarLow = 0;
-        int _angleSecondLow = 20;
+        int _angleSecondLow = 22;
 
         int _angleFourBarMid = 40;
-        int _angleSecondMid = 95;
+        int _angleSecondMid = 90;
 
-        int _angleFourBarHigh = 40;
-        int _angleSecondHigh = 75;
+        int _angleFourBarHigh = 50;
+        int _angleSecondHigh = 78;
 
         int _angleFourBarDouble = 25;
         int _angleSecondDouble = 80; 

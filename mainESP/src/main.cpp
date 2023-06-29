@@ -136,7 +136,7 @@ void loop() {
   AlfredoConnect.update();
 
   // enable logic
-  if(AlfredoConnect.buttonHeld(0, 9) && millis() - lastEnableRead > 300){
+  if(AlfredoConnect.buttonHeld(0, 9) && millis() - lastEnableRead > 500){
     lastEnableRead = millis();
     enabled = !enabled;
   }
@@ -186,7 +186,7 @@ void loop() {
 
   ///////////////////////////////////// get arm preset positions from controller
   if(AlfredoConnect.buttonHeld(0, 1)){ // circle
-    armPreset = 'H'; // high node
+    armPreset = 'M'; // mid node
     firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 2)){ // square
@@ -194,7 +194,7 @@ void loop() {
     firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 3)) { // triangle
-    armPreset = 'M'; // mid node
+    armPreset = 'H'; // high node
     firstArm = true;
   }
   if(AlfredoConnect.buttonHeld(0, 0)) { // x
@@ -209,17 +209,9 @@ void loop() {
     armPreset = 'S'; // single substation
     firstArm = true;
   }
-  
-
-  ///////////////////////////////////// intake
-  if(AlfredoConnect.buttonHeld(0, 13) && millis() - lastIntakeRead > 250){ // dpad down
-    lastIntakeRead = millis();
-    intakeClosed = !intakeClosed;
-    firstIntake = true;
-  }
 
   ///////////////////////////////////// field oriented
-  if(AlfredoConnect.buttonHeld(0, 14) && millis() - lastOrientedRead > 300){ // dpad left
+  if(AlfredoConnect.buttonHeld(0, 12) && millis() - lastOrientedRead > 300){ // dpad up
     lastOrientedRead = millis();
     fieldOriented = !fieldOriented;
   }
@@ -238,6 +230,12 @@ void loop() {
     if(fieldOriented){
       drivetrain.set(linearX, linearY, angularZ, robotHeading);
     }
+    else if (AlfredoConnect.buttonHeld(0, 14)) {
+      drivetrain.set(linearX, linearY, -0.8);
+    }
+    else if (AlfredoConnect.buttonHeld(0, 15)) {
+      drivetrain.set(linearX, linearY, 0.8);
+    }
     else{
       drivetrain.set(linearX, linearY, angularZ);
     }
@@ -248,19 +246,14 @@ void loop() {
       firstArm = false;
     }
 
-    // intake
-    if(firstIntake){
-      firstIntake = false;
-      if (intakeClosed) {
-        arm.setIntake(1);
-      }
-      else if (AlfredoConnect.buttonHeld(0, 15)) {
-        arm.setIntake(-1);
-      } //right bumper, change to match
-      else {
-        arm.setIntake(0);
-      }
-      
+    if (AlfredoConnect.buttonHeld(0, 5)) {
+      arm.setIntake(-1);
+    }
+    else if (AlfredoConnect.buttonHeld(0, 4)) {
+      arm.setIntake(1);
+    }
+    else {
+      arm.setIntake(-0.6);
     }
   }
   /////////////////////////////////// DISABLED
@@ -270,7 +263,7 @@ void loop() {
     frontRightMotor.set(0.0);
     backLeftMotor.set(0.0);
     backRightMotor.set(0.0);
-    arm.setIntake(false);
+    arm.setIntake(0);
   }
 }
 ////////////////////////////////////////////////////////////////////// Function Code //////////////////////////////////////////////////////////////////////
@@ -325,7 +318,6 @@ void driveInches(double inches, double linearX, double linearY, double angularZ)
 // actual autons
 void autonCharge(){
   placeHighAuton();
-  turnAuton();
   chargeAuton();
 }
 
