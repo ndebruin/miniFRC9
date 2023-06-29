@@ -10,6 +10,8 @@
 // #include "EncoderComms.h"
 // #include "CameraComms.h"
 
+#define LED_BUILTIN 2
+
 /////////////////////////////////// Function Declarations ///////////////////////////////////
 
 // function def
@@ -65,6 +67,9 @@ bool firstIntake = false;
 // current arm preset
 char armPreset = '0';
 
+bool fieldOriented = false;
+unsigned long lastOrientedRead = 0;
+
 uint8_t imuStarted;
 ////////////////////////////////////////////////////////////////////// setup() //////////////////////////////////////////////////////////////////////
 void setup() {
@@ -81,7 +86,7 @@ void setup() {
   arm.begin();
 
   // start RSL
-  RSL::initialize();
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // set direction of motors
   frontLeftMotor.setInverted(false);
@@ -99,7 +104,7 @@ void setup() {
 void loop() {
 
   // parse updates from IMU
-  uint8_t imuRead = imu.read();
+  int8_t imuRead = imu.read();
   if(imuRead > 0){
     serialBT.println("ERROR. IMU FAILED TO READ.");
     serialBT.println("Error code: " + String(imuRead));
@@ -121,16 +126,16 @@ void loop() {
 
   // rsl logic
   if(enabled){
-    RSL::setState(RSL_ENABLED);
+    digitalWrite(LED_BUILTIN, HIGH);
   }
   else{
-    RSL::setState(RSL_DISABLED);
+    digitalWrite(LED_BUILTIN, LOW);
   }
 
   ///////////////////////////////////// get values from controller for drivetrain
-  double linearX = -AlfredoConnect.getAxis(0, 2); // angularZ
-  double linearY = AlfredoConnect.getAxis(0, 3); // linearX
-  double angularZ = AlfredoConnect.getAxis(0, 0); // linearY
+  double linearX = -AlfredoConnect.getAxis(0, 0); // angularZ
+  double linearY = AlfredoConnect.getAxis(0, 1); // linearX
+  double angularZ = AlfredoConnect.getAxis(0, 2); // linearY
 
   // apply deadzone
   linearX = deadzone(linearX);
@@ -146,43 +151,55 @@ void loop() {
   }
 
   ///////////////////////////////////// get arm preset positions from controller
-  if(AlfredoConnect.buttonHeld(0, 15)){ // dpad right
+  if(AlfredoConnect.buttonHeld(0, 1)){ // circle
     armPreset = 'H'; // high node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 13)){ // dpad down
-    armPreset = 'D'; // double substation
+  if(AlfredoConnect.buttonHeld(0, 0)){ // x
+    armPreset = 'S'; // single substation
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 12)) { // dpad up
+  if(AlfredoConnect.buttonHeld(0, 3)) { // triangle
     armPreset = 'M'; // mid node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 14)) { // dpad left
+  if(AlfredoConnect.buttonHeld(0, 2)) { // square
     armPreset = 'L'; // low node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 7)) { // right trigger
+  if(AlfredoConnect.buttonHeld(0, 6)) { // left trigger
     armPreset = '0'; // stow
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 6)) { // left trigger
+  if(AlfredoConnect.buttonHeld(0, 7)) { // right trigger
     armPreset = 'F'; // floor
     firstArm = true;
   }
 
   ///////////////////////////////////// intake
-  if(AlfredoConnect.buttonHeld(0, 0) && millis() - lastIntakeRead > 250){ // x
+  if(AlfredoConnect.buttonHeld(0, 13) && millis() - lastIntakeRead > 250){ // dpad down
     lastIntakeRead = millis();
     intakeClosed = !intakeClosed;
     firstIntake = true;
   }
 
+  ///////////////////////////////////// field oriented
+  if(AlfredoConnect.buttonHeld(0, 14) && millis() - lastOrientedRead > 300){ // dpad left
+    lastOrientedRead = millis();
+    fieldOriented = !fieldOriented;
+  }
+
   ///////////////////////////////////// only write to hardware if enabled
   if(enabled) {
     //teleop
-    serialBT.println("Pitch: " + String(imu.getPitch()) + " Roll: " + String(imu.getRoll()) + " Yaw: " + String(imu.getYaw()));
-    drivetrain.set(linearX, linearY, angularZ);
+    
+    // drivetrain
+    if(fieldOriented){
+      drivetrain.set(linearX, linearY, angularZ, imu.getYaw());
+    }
+    else{
+      drivetrain.set(linearX, linearY, angularZ);
+    }
 
     // arm
     if (firstArm) {

@@ -11,7 +11,7 @@ void mecanumDrivetrain::begin(){
   _backRightMotor->set(0);
 }
 
-void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, bool fieldOriented, double yaw) {
+void mecanumDrivetrain::set(double linearX, double linearY, double angularZ, double yaw) {
   double linX = linearX;
   double linY = linearY;
   double angZ = angularZ;

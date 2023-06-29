@@ -133,10 +133,10 @@ int8_t IMU::read()
 
 
 double IMU::getPitch(){
-  return pitch;
+  return roll;
 }
 double IMU::getRoll(){
-  return roll;
+  return pitch;
 }
 double IMU::getYaw(){
   return yaw;
