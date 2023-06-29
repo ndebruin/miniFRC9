@@ -41,10 +41,6 @@ void Arm::set(char preset) {
     }
 }
 
-void Arm::setIntake(bool on) {
-    if(on){
-        _intakeMotor->set(1);
-    } else {
-        _intakeMotor->set(0);
-    }
+void Arm::setIntake(double on) {
+    _intakeMotor->set(on);
 }

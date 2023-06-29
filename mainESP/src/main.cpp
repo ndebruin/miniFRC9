@@ -251,7 +251,16 @@ void loop() {
     // intake
     if(firstIntake){
       firstIntake = false;
-      arm.setIntake(!intakeClosed);
+      if (intakeClosed) {
+        arm.setIntake(1);
+      }
+      else if (AlfredoConnect.buttonHeld(0, 15)) {
+        arm.setIntake(-1);
+      } //right bumper, change to match
+      else {
+        arm.setIntake(0);
+      }
+      
     }
   }
   /////////////////////////////////// DISABLED
