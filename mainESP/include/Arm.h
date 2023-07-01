@@ -40,7 +40,7 @@ class Arm
         int _angleSecondSingle = 0; 
 
         int _angleFourBarFloor = 0;     
-        int _angleSecondFloor = 95;
+        int _angleSecondFloor = 93;
 
         int _intakeClosed = 30;
         int _intakeOpen = 0;

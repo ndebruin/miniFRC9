@@ -85,6 +85,12 @@ bool autonStarted = true;
 String selectedAuton = "charge";
 
 uint8_t imuStarted;
+
+void resetEncoders() {
+  frontLeftEncoder.setCount(0);
+  frontRightEncoder.setCount(0);
+}
+
 ////////////////////////////////////////////////////////////////////// setup() //////////////////////////////////////////////////////////////////////
 void setup() {
   // begin DS comms
@@ -177,27 +183,27 @@ void loop() {
   }
 
   ///////////////////////////////////// get arm preset positions from controller
-  if(AlfredoConnect.buttonHeld(0, 1)){ // circle
+  if(AlfredoConnect.buttonHeld(1, 1)){ // circle
     armPreset = 'M'; // mid node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 2)){ // square
+  if(AlfredoConnect.buttonHeld(1, 2)){ // square
     armPreset = 'D'; // double substation
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 3)) { // triangle
+  if(AlfredoConnect.buttonHeld(1, 3)) { // triangle
     armPreset = 'H'; // high node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 0)) { // x
+  if(AlfredoConnect.buttonHeld(1, 0)) { // x
     armPreset = 'F'; // floor
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 6)) { // left trigger
+  if(AlfredoConnect.buttonHeld(1, 6)) { // left trigger
     armPreset = '0'; // stow
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(0, 7)) { // right trigger
+  if(AlfredoConnect.buttonHeld(1, 7)) { // right trigger
     armPreset = 'S'; // single substation
     firstArm = true;
   }
@@ -219,6 +225,11 @@ void loop() {
       autonClose();
       autonStarted = false;
     }
+  }
+
+  if (AlfredoConnect.keyHeld(Key::R) && AlfredoConnect.keyHeld(Key::F)) {
+    autonStarted = true;
+    resetEncoders();
   }
 
   ///////////////////////////////////// field oriented reCal
@@ -253,10 +264,10 @@ void loop() {
       firstArm = false;
     }
 
-    if (AlfredoConnect.buttonHeld(0, 5)) {
+    if (AlfredoConnect.buttonHeld(1, 5)) {
       arm.setIntake(-1);
     }
-    else if (AlfredoConnect.buttonHeld(0, 4)) {
+    else if (AlfredoConnect.buttonHeld(1, 4)) {
       arm.setIntake(1);
     }
     else {
@@ -281,12 +292,6 @@ double deadzone(double rawJoy){
     return 0.0;
   }
   return rawJoy;
-}
-
-
-void resetEncoders() {
-  frontLeftEncoder.setCount(0);
-  frontRightEncoder.setCount(0);
 }
 
 void updateYaw(){
@@ -330,7 +335,11 @@ void driveInches(double inches, double linearX, double linearY, double angularZ)
 
   while (rightRot < rightTarget || leftRot < leftTarget) {
     leftRot = fabs(frontLeftEncoder.getCount() / 40.0);
-    rightRot = fabs(frontRightEncoder.getCount() / 40.0); 
+    rightRot = fabs(frontRightEncoder.getCount() / 40.0);
+    AlfredoConnect.update();
+    if (AlfredoConnect.keyHeld(Key::Space)) {
+      return;
+    } 
     serialBT.println("leftRot: " + String(leftRot) + "rightRot: " + String(rightRot));
     serialBT.println("leftTarget: " + String(leftTarget) + "rightTarget: " + String(rightTarget));
     drivetrain.set(linearX, linearY, angularZ);
@@ -374,6 +383,10 @@ void turnAuton() {
   while(fabs(heading-initialYaw) < 150){
     imu.read();
     heading = imu.getYaw();
+    AlfredoConnect.update();
+    if (AlfredoConnect.keyHeld(Key::Space)) {
+      return;
+    }
     serialBT.println("Raw: " + String(imu.getYaw()) + " RobotHeading: " + String(heading) + " " + String(fabs(heading - initialYaw)));
     drivetrain.set(0.0, 0.0, -0.8);
     delay(1);
@@ -384,6 +397,10 @@ void turnAuton() {
   while(fabs(heading-initialYaw) < 180){
     imu.read();
     heading = imu.getYaw();
+    AlfredoConnect.update();
+    if (AlfredoConnect.keyHeld(Key::Space)) {
+      return;
+    }
     serialBT.println("Raw: " + String(imu.getYaw()) + " RobotHeading: " + String(heading) + " " + String(fabs(heading - initialYaw)));
     drivetrain.set(0.0, 0.0, -0.7);
     delay(1);
@@ -429,6 +446,10 @@ void chargeAuton() {
   // drive until we run into charge station
   while(fabs(imu.getPitch()) < 10){
     imu.read();
+    AlfredoConnect.update();
+    if (AlfredoConnect.keyHeld(Key::Space)) {
+      return;
+    }
     serialBT.println("Pitch: " + String(imu.getPitch()));
     drivetrain.set(0.0, 1.0, 0.0);
   }
@@ -437,8 +458,12 @@ void chargeAuton() {
   // drive until we are on top
   while(fabs(imu.getPitch()) > 10){
     imu.read();
+    AlfredoConnect.update();
+    if (AlfredoConnect.keyHeld(Key::Space)) {
+      return;
+    }
     serialBT.println("Pitch: " + String(imu.getPitch()));
-    drivetrain.set(0.0, 1.0, 0.0);
+    drivetrain.set(0.0, 0.8, 0.0);
   }
   drivetrain.set(0.0, 0.0, 0.0);
 }
