@@ -6,11 +6,18 @@ Arm::Arm(NoU_Servo* fourbarJoint, NoU_Servo* secondJoint, NoU_Motor* intakeMotor
 
 void Arm::begin(){
   _fourBarJoint->write(0);
+  delay(500);
   _secondJoint->write(0);
   _intakeMotor->set(0);
 }
 
-void Arm::set(int fourBarAngle, int secondAngle){
+void Arm::setDelay(int fourBarAngle, int secondAngle){
+    _fourBarJoint->write(fourBarAngle);
+    delay(250);
+    _secondJoint->write(secondAngle);
+}
+
+void Arm::set(int fourBarAngle, int secondAngle) {
     _fourBarJoint->write(fourBarAngle);
     _secondJoint->write(secondAngle);
 }
@@ -21,16 +28,16 @@ void Arm::set(char preset) {
             set(_angleFourBarLow, _angleSecondLow);
             break;
         case 'M':
-            set(_angleFourBarMid, _angleSecondMid);
+            setDelay(_angleFourBarMid, _angleSecondMid);
             break;
         case 'H':
-            set(_angleFourBarHigh, _angleSecondHigh);
+            setDelay(_angleFourBarHigh, _angleSecondHigh);
             break;
         case 'F':
             set(_angleFourBarFloor, _angleSecondFloor);
             break;
         case 'D':
-            set(_angleFourBarDouble, _angleSecondDouble);
+            setDelay(_angleFourBarDouble, _angleSecondDouble);
             break;
         case 'S':
             set(_angleFourBarSingle, _angleSecondSingle);
@@ -43,4 +50,10 @@ void Arm::set(char preset) {
 
 void Arm::setIntake(double on) {
     _intakeMotor->set(on);
+}
+
+void Arm::setHighAuton() {
+    set(_angleFourBarHigh, 0);
+    delay(300);
+    set(_angleFourBarHigh, _angleSecondHigh);
 }

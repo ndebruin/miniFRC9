@@ -17,6 +17,7 @@ void updateYaw();
 void autonCharge();
 void autonFar();
 void autonClose();
+void twoPieceAuton();
 void turnAuton();
 void placeHighAuton();
 void driveInches(double inches, double linearX, double linearY, double angularZ);
@@ -79,6 +80,10 @@ double robotHeading = 0.0;
 unsigned long lastRSLFlash = 0;
 bool RSLState = false;
 
+bool autonStarted = true;
+
+String selectedAuton = "charge";
+
 uint8_t imuStarted;
 ////////////////////////////////////////////////////////////////////// setup() //////////////////////////////////////////////////////////////////////
 void setup() {
@@ -87,7 +92,7 @@ void setup() {
   AlfredoConnect.begin(serialBT, true); // providing true means we won't get annoying errors regarding lack of joystick data
 
   // start imu
-  imuStarted = imu.begin(5, 4);  
+  imuStarted = imu.begin(5, 4);
 
   // start arm
   arm.begin();
@@ -153,19 +158,6 @@ void loop() {
     digitalWrite(LED_BUILTIN, HIGH);
   }
 
-  ///////////////////////////////////// auton triggers
-  if(AlfredoConnect.keyHeld(Key::Q)){
-    autonFar();
-  }
-
-  if(AlfredoConnect.keyHeld(Key::W)){
-    autonCharge();
-  }
-
-  if(AlfredoConnect.keyHeld(Key::E)){
-    autonClose();
-  }
-
   ///////////////////////////////////// get values from controller for drivetrain
   double linearX = -AlfredoConnect.getAxis(0, 0); // angularZ
   double linearY = AlfredoConnect.getAxis(0, 1); // linearX
@@ -216,25 +208,40 @@ void loop() {
     fieldOriented = !fieldOriented;
   }
 
-  ///////////////////////////////////// field oriented reCal
-  if(AlfredoConnect.buttonHeld(0, 8)){
-    yawOffset = -imu.getYaw();
+  if (autonStarted) {
+    if(AlfredoConnect.keyHeld(Key::W)){
+      placeHighAuton();
+      chargeAuton();
+      autonStarted = false;
+    }
+
+    if(AlfredoConnect.keyHeld(Key::E)){
+      autonClose();
+      autonStarted = false;
+    }
   }
+
+  ///////////////////////////////////// field oriented reCal
 
   ///////////////////////////////////// only write to hardware if enabled
   if(enabled) {
+
+    if(AlfredoConnect.buttonHeld(0, 8)){
+      yawOffset = -imu.getYaw();
+    }
+
     //teleop
-    serialBT.println("Raw data: " + String(imu.getYaw()) + "robotHeading: " + String(robotHeading));
+    serialBT.println("leftRot: " + String(frontLeftEncoder.getCount()) + "rightRot: " + String(frontRightEncoder.getCount()));
     
     // drivetrain
     if(fieldOriented){
       drivetrain.set(linearX, linearY, angularZ, robotHeading);
     }
     else if (AlfredoConnect.buttonHeld(0, 14)) {
-      drivetrain.set(linearX, linearY, -0.8);
+      drivetrain.set(linearX, linearY, -0.4);
     }
     else if (AlfredoConnect.buttonHeld(0, 15)) {
-      drivetrain.set(linearX, linearY, 0.8);
+      drivetrain.set(linearX, linearY, 0.4);
     }
     else{
       drivetrain.set(linearX, linearY, angularZ);
@@ -253,7 +260,7 @@ void loop() {
       arm.setIntake(1);
     }
     else {
-      arm.setIntake(-0.6);
+      arm.setIntake(0);
     }
   }
   /////////////////////////////////// DISABLED
@@ -274,6 +281,12 @@ double deadzone(double rawJoy){
     return 0.0;
   }
   return rawJoy;
+}
+
+
+void resetEncoders() {
+  frontLeftEncoder.setCount(0);
+  frontRightEncoder.setCount(0);
 }
 
 void updateYaw(){
@@ -299,17 +312,27 @@ void updateYaw(){
 
 // autons
 void driveInches(double inches, double linearX, double linearY, double angularZ) {
+  resetEncoders();
   double revsperin = 1.0/5.93689;
   double requiredrot = revsperin * inches;
   
   // 40 ticks per rev
-  double leftRot = frontLeftEncoder.getCount() / 40.0;
-  double rightRot = frontRightEncoder.getCount() / 40.0;
+  double leftRot = fabs(frontLeftEncoder.getCount() / 40.0);
+  double rightRot = fabs(frontRightEncoder.getCount() / 40.0);
+
+  rightRot = fabs(frontRightEncoder.getCount() / 40.0); 
 
   double leftTarget = leftRot + requiredrot;
   double rightTarget = rightRot + requiredrot;
 
-  while (rightRot != rightTarget || leftRot != leftTarget) {
+  serialBT.println("leftRot: " + String(leftRot) + "rightRot: " + String(rightRot));
+  serialBT.println("leftTarget: " + String(leftTarget) + "rightTarget: " + String(rightTarget));
+
+  while (rightRot < rightTarget || leftRot < leftTarget) {
+    leftRot = fabs(frontLeftEncoder.getCount() / 40.0);
+    rightRot = fabs(frontRightEncoder.getCount() / 40.0); 
+    serialBT.println("leftRot: " + String(leftRot) + "rightRot: " + String(rightRot));
+    serialBT.println("leftTarget: " + String(leftTarget) + "rightTarget: " + String(rightTarget));
     drivetrain.set(linearX, linearY, angularZ);
   }
   drivetrain.set(0, 0, 0);
@@ -323,7 +346,6 @@ void autonCharge(){
 
 void autonClose(){
   placeHighAuton();
-  turnAuton();
   taxiAuton();
 }
 
@@ -336,75 +358,87 @@ void autonFar(){
 void floorPickAuton(){
   arm.set('F');
   delay(50);
-  arm.setIntake(true);
+  arm.setIntake(-1);
   drivetrain.set(0.0, 0.6, 0.0);
   delay(100);
   drivetrain.set(0.0, 0.0, 0.0);
   arm.set('0');
 }
 
-void turnAuton(){
-  double initialYaw = robotHeading;
-
-  while(fabs(robotHeading-initialYaw) < 150){
+void turnAuton() {
+  drivetrain.set(0.0, 0.0, 0.0);
+  imu.read();
+  double initialYaw = imu.getYaw();
+  double heading = imu.getYaw();
+  serialBT.println("Initial Yaw: " + String(initialYaw) + " RobotHeading: " + String(heading));
+  while(fabs(heading-initialYaw) < 150){
     imu.read();
-    updateYaw();
-    serialBT.println("Raw: " + String(imu.getYaw()) + " RobotHeading: " + String(robotHeading) + String(fabs(robotHeading - initialYaw)));
+    heading = imu.getYaw();
+    serialBT.println("Raw: " + String(imu.getYaw()) + " RobotHeading: " + String(heading) + " " + String(fabs(heading - initialYaw)));
     drivetrain.set(0.0, 0.0, -0.8);
+    delay(1);
   }
+
+  imu.read();
+  // slow down close to it
+  while(fabs(heading-initialYaw) < 180){
+    imu.read();
+    heading = imu.getYaw();
+    serialBT.println("Raw: " + String(imu.getYaw()) + " RobotHeading: " + String(heading) + " " + String(fabs(heading - initialYaw)));
+    drivetrain.set(0.0, 0.0, -0.7);
+    delay(1);
+  }
+  drivetrain.set(0.0, 0.0, 0.0);
 }
 
 void placeHighAuton(){
   arm.set('H'); // set arm to high
-  delay(200); // wait for it to get there
-  arm.setIntake(false); // output piece
+  delay(1000); // wait for it to get there
+  arm.setIntake(1); // output piece
   delay(1000); // wait for piece to evacuate
   arm.set('0'); // stow arm
   delay(200);
+  arm.setIntake(0); // stop intake
+}
+
+void twoPieceAuton(){
+  placeHighAuton();
+  drivetrain.set(0.0, 0.8, 0.0);
+  delay(250);
+  drivetrain.set(0.0, 0.0, 0.0);
+  driveInches(11.0, 0.0, 0.0, 0.8);
+  delay(250);
+  driveInches(20.0, 0.0, -1.0, 0.0); // drive to second piece
+  arm.set('F'); // set arm to floor
+  delay(1000); // wait for it to get there
+  arm.setIntake(-1); // intake piece
+  driveInches(3.0, 0.0, -0.8, 0.0); // drive forward to intake
+  delay(1000); // wait for piece to intake
+  arm.set('0'); // stow arm
+  delay(200);
+  arm.setIntake(0); // stop intake
 }
 
 
 void taxiAuton() {
-  driveInches(35.0, 0.0, -0.8, 0.0);
+  driveInches(32.0, 0.0, 0.8, 0.0);
 }
 
 void chargeAuton() {
+  imu.read();
   // drive until we run into charge station
-  while(fabs(imu.getPitch()) < 5){
-    drivetrain.set(0.0, 0.8, 0.0);
+  while(fabs(imu.getPitch()) < 10){
+    imu.read();
+    serialBT.println("Pitch: " + String(imu.getPitch()));
+    drivetrain.set(0.0, 1.0, 0.0);
   }
 
+  imu.read();
   // drive until we are on top
-  while(fabs(imu.getPitch()) > 5){
-    drivetrain.set(0.0, 0.8, 0.0);
-  }
-  drivetrain.set(0.0, 0.0, 0.0);
-
-  // taxi part
-  // off of balanced
-  while(fabs(imu.getPitch()) < 5){
-    drivetrain.set(0.0, 0.6, 0.0);
-  }
-
-  // all the way off
-  while(fabs(imu.getPitch()) > 5){
-    drivetrain.set(0.0, 0.6, 0.0);
-  }
-  // stop
-  drivetrain.set(0.0, 0.0, 0.0);
-  // wait 100 ms
-  delay(100);
-
-  // drive back up
-
-  // drive until we run into charge station
-  while(fabs(imu.getPitch()) < 5){
-    drivetrain.set(0.0, -0.8, 0.0);
-  }
-
-  // drive until we are on top
-  while(fabs(imu.getPitch()) > 5){
-    drivetrain.set(0.0, -0.8, 0.0);
+  while(fabs(imu.getPitch()) > 10){
+    imu.read();
+    serialBT.println("Pitch: " + String(imu.getPitch()));
+    drivetrain.set(0.0, 1.0, 0.0);
   }
   drivetrain.set(0.0, 0.0, 0.0);
 }
