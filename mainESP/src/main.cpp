@@ -97,9 +97,6 @@ void setup() {
   serialBT.begin(robotName);
   AlfredoConnect.begin(serialBT, true); // providing true means we won't get annoying errors regarding lack of joystick data
 
-  // start imu
-  imuStarted = imu.begin(5, 4);
-
   // start arm
   arm.begin();
 
@@ -122,22 +119,6 @@ void setup() {
 }
 ////////////////////////////////////////////////////////////////////// loop() //////////////////////////////////////////////////////////////////////
 void loop() {
-
-  // parse updates from IMU
-  int8_t imuRead = imu.read();
-  if(imuRead > 0){
-    serialBT.println("ERROR. IMU FAILED TO READ.");
-    serialBT.println("Error code: " + String(imuRead));
-  }
-
-  if(imuStarted > 0){
-    serialBT.println("ERROR! IMU FAILED TO START");
-    serialBT.println("Error code: " + String(imuStarted));
-  }
-
-  // manage yaw data
-  updateYaw();
-
   // check for disconnect
   if(!AlfredoConnect.getGamepadCount() >= 1){
     enabled = false;
@@ -183,28 +164,24 @@ void loop() {
   }
 
   ///////////////////////////////////// get arm preset positions from controller
-  if(AlfredoConnect.buttonHeld(1, 1)){ // circle
+  if(AlfredoConnect.buttonHeld(0, 1)){ // circle
     armPreset = 'M'; // mid node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(1, 2)){ // square
+  if(AlfredoConnect.buttonHeld(0, 2)){ // square
     armPreset = 'D'; // double substation
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(1, 3)) { // triangle
+  if(AlfredoConnect.buttonHeld(0, 3)) { // triangle
     armPreset = 'H'; // high node
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(1, 0)) { // x
+  if(AlfredoConnect.buttonHeld(0, 0)) { // x
     armPreset = 'F'; // floor
     firstArm = true;
   }
-  if(AlfredoConnect.buttonHeld(1, 6)) { // left trigger
+  if(AlfredoConnect.buttonHeld(0, 6)) { // left trigger
     armPreset = '0'; // stow
-    firstArm = true;
-  }
-  if(AlfredoConnect.buttonHeld(1, 7)) { // right trigger
-    armPreset = 'S'; // single substation
     firstArm = true;
   }
 
@@ -264,10 +241,10 @@ void loop() {
       firstArm = false;
     }
 
-    if (AlfredoConnect.buttonHeld(1, 5)) {
+    if (AlfredoConnect.buttonHeld(0, 5)) {
       arm.setIntake(-1);
     }
-    else if (AlfredoConnect.buttonHeld(1, 4)) {
+    else if (AlfredoConnect.buttonHeld(0, 4)) {
       arm.setIntake(1);
     }
     else {

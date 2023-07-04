@@ -5,21 +5,19 @@ Arm::Arm(NoU_Servo* fourbarJoint, NoU_Servo* secondJoint, NoU_Motor* intakeMotor
 { }
 
 void Arm::begin(){
-  _fourBarJoint->write(0);
-  delay(500);
-  _secondJoint->write(0);
+  set('0');
   _intakeMotor->set(0);
 }
 
 void Arm::setDelay(int fourBarAngle, int secondAngle){
-    _fourBarJoint->write(fourBarAngle);
+    _fourBarJoint->write(180 - fourBarAngle);
     delay(250);
-    _secondJoint->write(secondAngle);
+    _secondJoint->write(180 - secondAngle);
 }
 
 void Arm::set(int fourBarAngle, int secondAngle) {
-    _fourBarJoint->write(fourBarAngle);
-    _secondJoint->write(secondAngle);
+    _fourBarJoint->write(180 - fourBarAngle);
+    _secondJoint->write(180 - secondAngle);
 }
 
 void Arm::set(char preset) {

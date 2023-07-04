@@ -25,13 +25,13 @@ class Arm
         int _angleSecondStow = 0;
 
         int _angleFourBarLow = 0;
-        int _angleSecondLow = 22;
+        int _angleSecondLow = 60;
 
-        int _angleFourBarMid = 40;
-        int _angleSecondMid = 90;
+        int _angleFourBarMid = 30;
+        int _angleSecondMid = 85;
 
-        int _angleFourBarHigh = 60;
-        int _angleSecondHigh = 78;
+        int _angleFourBarHigh = 30;
+        int _angleSecondHigh = 75;
 
         int _angleFourBarDouble = 25;
         int _angleSecondDouble = 80; 
@@ -41,9 +41,6 @@ class Arm
 
         int _angleFourBarFloor = 0;     
         int _angleSecondFloor = 93;
-
-        int _intakeClosed = 30;
-        int _intakeOpen = 0;
 };
 
 #endif
